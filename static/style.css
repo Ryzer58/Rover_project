@@ -1,0 +1,124 @@
+.dirPanel{
+
+	position: absolute;	
+	top: 60px;
+	right: 10px;
+	
+}
+
+.dir-buttons{
+	
+	background-color: #008CBA; /*Green*/
+	border: none;
+	color: white;
+	height: 155px;
+	width: 155px;
+	align-items: center;
+	display: inline-block;
+	font-size: 20px;
+	
+}
+
+.forward{
+	
+	position: relative;
+	top: 25px;
+	right: -432px;
+	text-decoration: Forward;
+
+}
+
+.left{
+	
+	position: relative;
+	top: 188px;
+	right: 198px;
+	text-decoration: Left;
+
+}
+
+.em-stop{
+	
+	position: relative;
+	top: 100px;
+	right: -120px;
+	text-decoration: Stop;
+}
+
+.right{
+	
+	position: relative;
+	top: 188px;
+	right: -438px;
+	text-decoration: Right;
+
+}
+
+.reverse{
+	
+	position: relative;
+	top: 291px;
+	right: 199px;
+	text-decoration: Reverse;
+	
+}
+
+.camPanel{
+	
+	position: absolute;
+	bottom: 40px;
+	left:110px;
+}
+
+.cam-buttons{
+	
+	background-color: #008CBA; /*Green*/
+	border: none;
+	color: white;
+	position: relative;
+	height: 60px;
+	width: 60px;
+	align-items: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 20px;
+}
+
+.pan-left-full{
+	
+	left: -20px;
+	
+}
+
+.pan-left{
+	
+	left: 225px;
+	
+}
+
+.pan-home{
+
+	bottom: 26px;
+	left: 170px;
+}
+
+.pan-right {
+	
+	left:295px;
+	
+}
+
+.pan-right-full{
+	
+	left:180px;
+}
+
+.speedTime{
+	
+}
+
+.feed{
+	
+	position: absolute;
+	left: 150px;
+}

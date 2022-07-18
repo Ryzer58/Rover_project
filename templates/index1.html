@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<!--
+   Wifi/WEB based rover driver page
+
+   Original by Scott Beasley, Modified by Ryzer
+
+   Free to use or modify. Enjoy!
+-->
+<html>
+<head>
+	<link rel="stylesheet" type="text/css" href= "../static/style.css">
+	<title>Pcduino web controller V1.0</title>
+<script type="javascript">
+document.onkeypress = keypressed;
+var last_action = "";
+var start_dt = new Date ( );
+var last_mills = start_dt.getTime ( );
+
+function sendMotion (action) {
+   var run_dt = new Date ( );
+   var mills = run_dt.getTime ( );
+
+   // If a dup, ignore if newer than .500ms
+   if (action == last_action && (mills - last_mills) <= 500)
+      return;
+
+   last_mills = mills;
+   last_action = action;
+   request = new XMLHttpRequest ( );
+   request.open ("GET", action, true);
+   request.send ( );
+}
+
+function keypressed (event) {
+   var keyCd = ('charCode' in event) ? event.charCode : event.keyCode;
+
+   if (keyCd == 49)            // 1
+      sendMotion ('panlt')
+
+   if (keyCd == 50)            // 2
+      sendMotion ('panrt')
+
+   if (keyCd == 51)            // 3
+      sendMotion ('panfull_lt')
+
+   if (keyCd == 52)
+      sendMotion ('panfull_rt') // 4
+
+   if (keyCd == 47)            // /
+      sendMotion ('home')
+
+   if (keyCd == 113 || keyCd == 81)  // q
+      sendMotion ('ltforward')
+
+   if (keyCd == 119 || keyCd == 87)  // w
+      sendMotion ('forward')
+
+   if (keyCd == 122 || keyCd == 90)  // z
+      sendMotion ('backward')
+
+   if (keyCd == 101 || keyCd == 69)  // e
+      sendMotion ('rtforward')
+
+   if (keyCd == 97 || keyCd == 65)   // a
+      sendMotion ('left')
+
+   if (keyCd == 104 || keyCd == 72)  // h
+      sendMotion ('stop')
+
+   if (keyCd == 115 || keyCd == 83)  // s
+      sendMotion ('right')
+}
+
+</script>
+</head>
+<body>
+	<center>
+		Rover Control Center V1.2
+	</center>
+	<font face="Arial">
+	
+	<!---
+	
+	Function buttons and features to incorporate later
+	
+	<div class = "functions">
+	
+		<button class="button function">Lights</button>
+		Toggle switch for controlling lighting with the aim of also 
+		integrating functioning indicators
+		
+		<button class="button function">Snapshot</button>
+		Take a snapshot from the camera feed and save it
+		
+		<button class="button function">Mic</button>
+		Option to stream audio input from the webcam's microphone
+		
+		A feedback mechanism to report back a value for the speed of the motor
+		
+		Identification of the current servo/steering position
+		
+	</div
+		
+		
+		
+		<div class="slidecontainer">
+		Throttle
+		<input type="range" min="0" max="250" value="10" class="slider" id="Throttle">
+	</div>
+	
+	-->
+	
+	<div class = "dirPanel">
+      
+		
+		<button type="button" class="forward dir-buttons" name="forward" value="0" id="forward">Forward
+		<input type="image" src="../static/forward.png" id="imgforward"
+        onclick="sendMotion ('forward');"/>
+         
+		<button type="button" class="right dir-buttons" name="rtforward" value="0" id="right">Right
+		<input type="image" src="../static/right.png"
+		id="imgRtforward" onclick="sendMotion ('right');"/></button>
+     
+		
+		<button type="button" class="em-stop dir-buttons" name="stop" value="0" id="stop" />Stop
+		<input type="image" src="../static/stop.png"   id="imgstop"
+		onclick="sendMotion ('stop');"/></button>
+		
+		
+		<button type="button" class="left dir-buttons" name="left" value="0" id="left">Left
+		<input type="image" src="../static/left.png" id="imgleft"
+		onclick="sendMotion ('left');"/></button>
+         
+		
+		<button type="button" class="reverse dir-buttons" name="backward" value="0" id="backward">Reverse
+		<input type="image" src="../static/backward.png" id="imgbackward"
+		onclick="sendMotion ('backward');"/></button>
+	  
+	</div>
+	
+	<div class = "camPanel">
+		
+		<button type="button" class="pan-left cam-buttons" name="panlt" id="panlt" />
+		<input type="image" src="../static/1leftarrow.png"
+		id="imgpanlt" onclick="sendMotion ('panlt');"
+		onkeypress="keypressed (event);"/>
+		
+		<button type="button" class="pan-right cam-buttons" name="panrt" id="panrt" />
+		<input type="image" src="../static/1rightarrow.png"
+		id="imgpanrt" onclick="sendMotion ('panrt');"/>
+         
+        
+        <button type="button" class="pan-home cam-buttons" name="homecam" id="homecam" />Home
+        <input type="image" src="../static/gohome.png"
+        id="imghome" onclick="sendMotion ('home');"/>
+         
+        
+        <button class="pan-left-full cam-buttons" name="panfull_lt" id="panfull_lt" />
+        <input type="image" src="../static/arrow-left-double.png"
+        id="imgpanall_lt" onclick="sendMotion ('panfull_lt');"
+        onkeypress="keypressed (event);"/>
+		
+        <button class="pan-right-full cam-buttons" name="panfull_rt" id="panfull_rt" />
+        <input type="image" src="../static/arrow-right-double.png"
+        id="imgpanall_rt" onclick="sendMotion ('panfull_rt');"/>
+	</div>
+	
+	<div class = "SpeedTime">
+		<div>
+			<center>
+				<input type="radio" name="speed" value="42" id="speed_low"
+				onclick="sendMotion ('speed_low');">Low throttle
+
+				<input type="radio" name="speed" value="84" id="speed_mid"
+				onclick="sendMotion ('speed_mid');" checked>Mid throttle
+		
+				<input type="radio" name="speed" value="126" id="speed_hi"
+				onclick="sendMotion ('speed_hi');">High throttle
+			</center>
+		</div>
+		
+		<div>
+			<center>
+				<input type="radio" name="run_time" value="42" id="short_time"
+				onclick="sendMotion ('short_time');">Short run
+         
+				<input type="radio" name="run_time" value="84" id="mid_run"
+				onclick="sendMotion ('mid_run');" checked>Med run
+		
+				<input type="radio" name="run_time" value="126" id="continuous"
+				onclick="sendMotion ('continuous');">Continuous
+			</center>
+		</div>
+		
+	</div>
+	
+	<div class="feed">
+		<p id = "streamwrap" class="xform-p">
+			<img id="streamimage" class="xform" src="./?action=stream" width="640" height="480" alt="Feed Offline">
+		</p>
+	</div>
+   
+	</font>
+</body>
+</html>
