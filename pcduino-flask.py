@@ -2,16 +2,21 @@
 #
 # Wifi/Web driven Rover
 #
-# Written by Scott Beasley - 2015
+# Written by Ryzer - 2021
 #
-# Uses RPIO, pyserial and Flask
+# Uses Adafruit Blinka, pyserial and Flask
 #
+# A Pcduino running an Armbian based image.
+# Ensure that the overlays for both I2C2
+# AND PWM overlay are enabled prior to using.
+# The Pcduino has 2 hardware capble PWM which
+# can be selected below
 
 import time
 import serial
-import board #Adafruit
+import board #Import the board profile from Blinka libraries
 import digitalio
-from adafruit_servokit import ServoKit
+from adafruit_servokit import ServoKit #I2C servo shield libraries
 from config import driver
 from flask import Flask, render_template, request
 
@@ -43,7 +48,7 @@ Throttle_1 = "pwm0" #Pin 5 Pcduino
 # Speed and drive control variables - remember to set pwm and directional control variables
 driver.pulseDuration(Throttle_1, 1000000)
 driver.pulseSpeed(Throttle_1, 0) #start at a stationary position
-driver.polarity(Throttle, 0)
+driver.polarity(Throttle_1, 0)
 driver.enable(Throttle_1, 1)
 speed_offset = 84
 run_time = 0.750
@@ -105,7 +110,7 @@ def left ( ):
    global turn_offset
 
    print ("Left")
-   go_left()
+   sw_left()
    
    time.sleep (0.500 - turn_offset) # sleep @1/2 second
    
@@ -118,7 +123,7 @@ def right ( ):
    global turn_offset
 
    print ("Right")
-   go_right ( )
+   sw_right ( )
 
    time.sleep (0.500 - turn_offset) # sleep @1/2 second - need to adjust for servp
 
@@ -132,7 +137,7 @@ def sharpLfFor ( ):
 
    print ("Left forward turn")
    dir_1.value = True
-   go_left ( )
+   sw_left ( )
    go_forward
 
    time.sleep (0.250 - (turn_offset / 2)) # sleep @1/8 second
@@ -147,7 +152,7 @@ def sharpLfRev ( ):
 
    print ("Left forward turn")
    dir_1.value = False
-   go_left ( )
+   sw_left( )
    go_backward()
 
    time.sleep (0.250 - (turn_offset / 2)) # sleep @1/8 second
@@ -162,7 +167,7 @@ def sharpRtFor ( ):
 
    print ("Right forward turn")
    dir_1.value = True
-   go_right ( )
+   sw_right ( )
    go_forward()
    
    time.sleep (0.250 - (turn_offset / 2)) # sleep @1/8 second
@@ -177,7 +182,7 @@ def sharpRtRev ( ):
 
    print ("Right forward turn")
    dir_1.value = False
-   go_right ( )
+   sw_right ( )
    go_backward()
 
    time.sleep (0.250 - (turn_offset / 2)) # sleep @1/8 second
