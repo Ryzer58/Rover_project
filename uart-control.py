@@ -14,16 +14,51 @@ import tty
 import termios
 #import thread - Time control fail safe mechanism to add later.
 
+#Predefine controller information to be adjusted based on data fetched back from the Arduino
+
+forMin = 0
+forMax = 0
+revMin = 0
+revMax = 0
+
+motParam = [revMin, revMax, forMin, forMax]
+motLabel = ['Min Reverse ', 'Max Reverse ','Min Forward ','Max Forward ']
+
+serRight = 0
+serCentre = 0
+serLeft = 0
+
+servoParam = [serCentre, serLeft, serRight]
+servoLabel = ['Centre ','Max left ','Max right ']
+
 pos = 30
 speed = 0
-wait_time = 0
+run_time = 0 #Empty place holder, not yet implemented
+arc_time = 0 #Empty place holder not yet implemented
 func = 0
 
-preSpeed = 0
+speedLock = 0
 
-piComm = serial.Serial('/dev/ttyACM0',19200,timeout = 1)
-#piComm = serial.Serial('/dev/ttyUSB0',19200,timeout = 1) #For compitability with Nano clones (CH304)
-#Any improvement may be to read the paramters from the arduino and
+piComm = serial.Serial('/dev/ttyACM0',19200,timeout = 7)
+#piComm = serial.Serial('/dev/ttyUSB0',19200,timeout = 7) #For compitability with Nano clones (CH304)
+piComm.flush()
+
+
+# Admittedly this is probably not the most efficient way of doing things, I will look for a better way
+# in the future but for now it should work for simply retrieving motor parameters from the Arduino
+motor = piComm.readline().decode('utf-8').lstrip('Motor: ') # Firstly read back motor configuration from Arduino
+motData = motor.split(",")
+print("Motor Configuration: ")
+for m in range(len(motData)):
+    motParam[m] = int(motData[m])
+    print(motLabel[m] + str(motData[m])) #Print back the retrieved value
+
+servo = piComm.readline().decode('utf-8').lstrip('Servo: ') # Second read back servo parameters from Arduino
+servoData = servo.split(",")
+print("Servo configuaration: ")
+for s in range(len(servoData)):
+    servoParam[s] = int(servoData[s])
+    print(servoLabel[s] + str(servoData[s]))
 
 
 def readchar():
@@ -65,9 +100,12 @@ def transmit():
     piComm.write(toSend.encode('utf-8'))
 
 def recieve():
-    feedback = piComm.readline().decode('utf-8').rstrip()
-    print(feedback)
-    #Still need to find a more useful way to handle incoming data
+    toRecieve = piComm.readline().decode('utf-8').rstrip()
+    recieveData = toRecieve.split(",")
+    #todo - need to include a proper handler function to split data then process according to type
+    #segment1 - status byte
+    #segment2 - return throttle data return from the intial vector data sent
+    #segment3 - return of servo position
     
 
 
@@ -76,7 +114,7 @@ try:
         keyp = readKey()
         
         if keyp == 'w' or ord(keyp) ==16:               
-            if speed < 190: #if not already set forward the align with minimum forward vector.
+            if speed < forMin: #if not already set forward the align with minimum forward vector.
                    speed = 200
                    sleep(0.5)
             print('Forward: ' + str(speed))
@@ -84,31 +122,35 @@ try:
 
 
         elif keyp == 's' or ord(keyp) == 17:
-              if speed > 185 or speed < 5:
+              if speed > revMax or speed < 5:
                      speed = 15
                      sleep(0.5)
               print('Reverse' + str(speed))
               run_time = 3
 
         elif keyp == 'd' or ord(keyp) == 19:
-              print('Right')
-              if pos < 60:
+              print('Right: ')
+              if pos < serRight:
                   pos = pos + 5
-              if pos == 0:
-                 wait_time = 1 #give servo time to reach position
+                  print(str(pos))
+              if pos == 60:
+                 print('at max')
+                 run_time = 1 #give servo time to reach position
 
         elif keyp == 'a' or ord(keyp) == 18:
               print('Left')
-              if pos > 0:
+              if pos > serLeft:
                   pos = pos - 5
-              if pos == 60:
-                  wait_time = 1
+                  print(str(pos))
+              if pos == 0:
+                  print('at max')
+                  run_time = 1
 
         elif keyp == '.' or keyp == '>':
               print('Accelarating')
-              if speed >= 5 and speed <= 185: #Reverse Accelration
+              if speed >= revMin and speed <= revMax: #Reverse Accelration
                   speed = speed + 10
-              elif speed >=190 and speed <370: #Forward Accelration
+              elif speed >= forMin and speed < forMax: #Forward Accelration
                   speed = speed + 10
               else:
                    print('Max speed')
