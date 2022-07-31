@@ -33,13 +33,13 @@ servoLabel = ['Centre ','Max left ','Max right ']
 
 pos = 30
 speed = 0
-run_time = 0 #Empty place holder, not yet implemented
-arc_time = 0 #Empty place holder not yet implemented
+run_time = 0 #Just a place holder for a counter yet to be implemented
+arc_time = 1945 #todo time for the servo to swing 60 degree in microseconds (more use for automation rather than in manual mode)
 func = 0
 
 speedLock = 0
 
-piComm = serial.Serial('/dev/ttyACM0',19200,timeout = 7)
+piComm = serial.Serial('/dev/ttyACM0',19200,timeout = 1)
 #piComm = serial.Serial('/dev/ttyUSB0',19200,timeout = 7) #For compitability with Nano clones (CH304)
 piComm.flush()
 
@@ -59,6 +59,16 @@ print("Servo configuaration: ")
 for s in range(len(servoData)):
     servoParam[s] = int(servoData[s])
     print(servoLabel[s] + str(servoData[s]))
+
+#ensure values are actually set, doesnt quite work the same way as arduino, not the best way to do things but should work
+revMin = motParam[0]
+revMax = motParam[1]
+forMin = motParam[2]
+forMax = motParam[3]
+
+serCentre = servoParam[0]
+serLeft = servoParam[1]
+serRight = servoParam[2]
 
 
 def readchar():
@@ -122,7 +132,7 @@ try:
 
 
         elif keyp == 's' or ord(keyp) == 17:
-              if speed > revMax or speed < 5:
+              if speed > revMax or speed < revMin:
                      speed = 15
                      sleep(0.5)
               print('Reverse' + str(speed))
@@ -133,7 +143,7 @@ try:
               if pos < serRight:
                   pos = pos + 5
                   print(str(pos))
-              if pos == 60:
+              if pos == serRight:
                  print('at max')
                  run_time = 1 #give servo time to reach position
 
@@ -142,27 +152,34 @@ try:
               if pos > serLeft:
                   pos = pos - 5
                   print(str(pos))
-              if pos == 0:
+              if pos == serLeft:
                   print('at max')
                   run_time = 1
 
         elif keyp == '.' or keyp == '>':
               print('Accelarating')
-              if speed >= revMin and speed <= revMax: #Reverse Accelration
+              if speed >= revMin and speed < revMax: #Reverse Accelration
                   speed = speed + 10
+                  print('in reverse to ' + str(speed))
+
               elif speed >= forMin and speed < forMax: #Forward Accelration
                   speed = speed + 10
+                  print('forward to ' + str(speed))
+
               else:
-                   print('Max speed')
+                   print('at max speed')
 
         elif keyp == ',' or keyp == '<':
-            print('Deccelarating')
-            if speed > 5 and speed < 185: #Reverse Accelration
+            print('Deccelarating: ')
+            if speed > revMin and speed <= revMax: #Reverse Accelration
                   speed = speed - 10
-            elif speed > 190 and speed < 370: #Forward Accelration
+                  print('in reverse to ' + str(speed))
+                  
+            elif speed > forMin and speed <= forMax: #Forward Accelration
                   speed = speed - 10
+                  print('forward to ' + str(speed))
             else:
-                print('Min speed')
+                print('at min speed')
           
         elif keyp == 'e' or '/':
               print('Stopping')
