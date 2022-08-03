@@ -7,13 +7,13 @@
 #Lipo battery
 #3D printed chasis
 
+from operator import truediv
+from shutil import move
 from time import sleep
 import serial
 import sys
 import tty
 import termios
-#import thread - Time control fail safe mechanism to add later.
-
 #Predefine controller information to be adjusted based on data fetched back from the Arduino
 
 forMin = 0
@@ -39,8 +39,8 @@ func = 0
 
 speedLock = 0
 
-piComm = serial.Serial('/dev/ttyACM0',19200,timeout = 1)
-#piComm = serial.Serial('/dev/ttyUSB0',19200,timeout = 7) #For compitability with Nano clones (CH304)
+piComm = serial.Serial('/dev/ttyACM0',19200,timeout = 2)
+#piComm = serial.Serial('/dev/ttyUSB0',19200,timeout = 2) #For compitability with Nano clones (CH304)
 piComm.flush()
 
 
@@ -59,17 +59,19 @@ print("Servo configuaration: ")
 for s in range(len(servoData)):
     servoParam[s] = int(servoData[s])
     print(servoLabel[s] + str(servoData[s]))
+    
+#ensure values are actually set, doesnt quite work the same way as arduino, not the best way to do #things but should work
 
-#ensure values are actually set, doesnt quite work the same way as arduino, not the best way to do things but should work
-revMin = motParam[0]
-revMax = motParam[1]
-forMin = motParam[2]
-forMax = motParam[3]
+revMin, revMax, forMin, forMax = [motParam[i] for i in [0 , 1, 2, 3]]
+serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
+#revMin = motParam[0]
+#revMax = motParam[1]
+#forMin = motParam[2]
+#forMax = motParam[3]
 
-serCentre = servoParam[0]
-serLeft = servoParam[1]
-serRight = servoParam[2]
-
+#serCentre = servoParam[0]
+#serLeft = servoParam[1]
+#serRight = servoParam[2]
 
 def readchar():
     fd = sys.stdin.fileno()
@@ -112,11 +114,76 @@ def transmit():
 def recieve():
     toRecieve = piComm.readline().decode('utf-8').rstrip()
     recieveData = toRecieve.split(",")
-    #todo - need to include a proper handler function to split data then process according to type
-    #segment1 - status byte
-    #segment2 - return throttle data return from the intial vector data sent
-    #segment3 - return of servo position
     
+    #todo - need to include a proper handler function to split data then process according to type
+    
+    #DataSet1 -core data:
+
+    #segment1 - status byte:
+    #use to confirm if we are moving and in what direction
+    #still need to learn how to disect the desired results then store appropriately
+    #remember to covert from a string to a byte
+    
+
+    #untested - need to upgrade arduino sketch once chasis body modifications are made
+    #
+    #move =  128
+    #forward = 64
+    #turning = 32
+    #right = 16
+    #
+    #motion = int(recieveData[0]) & move
+    #
+    #if motion == move:
+    #    moving = True
+    #
+    #   dir = recieveData[0] & forward
+    #
+    #   if dir == forward:
+    #       goForward = True
+    #       #add in error check
+    #
+    #   else:
+    #       goForward = False
+    #
+    #else:
+    #   moving = False
+    #
+    #pivot = recieveData[0] & turning
+    #
+    #if pivot == turning:
+    #
+    #   turn = True
+    #   swing = recieveData[0] & right
+    #
+    #   if swing == right:
+    #
+    #       goRight = True
+    #
+    #   else:
+    #       goRight = False
+    #
+    #else:
+    #
+    #   turn = False
+    #
+    #segment2 - raw throttle data
+    #As we already know the direction this will instead return a direction PWM based on the sketch mapping
+    #then calculate what the value should be based on the original vector to confirm
+    #In the future this will probably be combind with additional sensor data such as speed 
+    #
+    #segment3 - servo position
+    #This will just confirm that it has recieved the value we have expected it to.
+    #
+    #if recieveData[2] != pos:
+    #   
+    #    print("Steering error")
+    #
+    #Dataset2 - Ultrasonic sensor data:
+    # probably do this in a second pass and think of a more organised way to handle
+    #
+    #segements 1 - 3 - Readings from the array of sensorys, this will either be the forward or rear array, use status byte to
+    # identify which array is being sourcesed from.
 
 
 try:
@@ -135,11 +202,11 @@ try:
               if speed > revMax or speed < revMin:
                      speed = 15
                      sleep(0.5)
-              print('Reverse' + str(speed))
+              print('Reverse: ' + str(speed))
               run_time = 3
 
         elif keyp == 'd' or ord(keyp) == 19:
-              print('Right: ')
+              print('Right:', end=' ')
               if pos < serRight:
                   pos = pos + 5
                   print(str(pos))
@@ -148,7 +215,7 @@ try:
                  run_time = 1 #give servo time to reach position
 
         elif keyp == 'a' or ord(keyp) == 18:
-              print('Left')
+              print('Left:', end=' ')
               if pos > serLeft:
                   pos = pos - 5
                   print(str(pos))
@@ -157,7 +224,7 @@ try:
                   run_time = 1
 
         elif keyp == '.' or keyp == '>':
-              print('Accelarating')
+              print('Accelarating', end=' ')
               if speed >= revMin and speed < revMax: #Reverse Accelration
                   speed = speed + 10
                   print('in reverse to ' + str(speed))
@@ -166,11 +233,14 @@ try:
                   speed = speed + 10
                   print('forward to ' + str(speed))
 
+              elif speed == 0:
+                   print('stationary')
+              
               else:
                    print('at max speed')
 
         elif keyp == ',' or keyp == '<':
-            print('Deccelarating: ')
+            print('Deccelarating', end=' ')
             if speed > revMin and speed <= revMax: #Reverse Accelration
                   speed = speed - 10
                   print('in reverse to ' + str(speed))
@@ -178,6 +248,10 @@ try:
             elif speed > forMin and speed <= forMax: #Forward Accelration
                   speed = speed - 10
                   print('forward to ' + str(speed))
+            
+            elif speed == 0:
+                 print('stationary')
+                 
             else:
                 print('at min speed')
           
@@ -205,6 +279,6 @@ except KeyboardInterrupt:
     piComm.close()
     sys.exit()
     
-except IOError:
+except FileNotFoundError:
     print("Adruino not detected")
     
