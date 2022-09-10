@@ -27,6 +27,7 @@ dir_1 = digitalio.DigitalInOut(board.D4)
 dir_1.direction = digitalio.Direction.OUTPUT
 
 Throttle_1 = "pwm0"
+speed = 60
 
 #Motor 2 configuration - connect matching jumper on dir B header
 #dir_2 = digitalio.DigitalInOut(board.D8)
@@ -36,6 +37,11 @@ Throttle_1 = "pwm0"
 
 #Throttle_2 = "pwm1"
 
+#Servo positions
+centre = 30
+right = 60
+left = 0
+
 #configure lighting controls
 Hd_lamps = digitalio.DigitalInOut(board.D8)
 Hd_lamps.direction = digitalio.Direction.OUTPUT
@@ -44,16 +50,26 @@ Hd_lamps.direction = digitalio.Direction.OUTPUT
 #Rear =
 
 def mot_setup():
-    driver.pulseDuration(Throttle_1, 15000000)
-    driver.pulseSpeed(Throttle_1, 0) #start at a stationary position
-    driver.polarity(Throttle_1, 0)
-    driver.enable(Throttle_1, 1)
+    pwmSet.pulseDuration(Throttle_1, 25000000) #Period value in nanoseconds
+    pwmSet.pulseDuty(Throttle_1, 0) #start at a stationary position
+    pwmSet.polarity(Throttle_1, 0) #Not strictly necessary as it should already be set 0 using the correction script
+    pwmSet.enable(Throttle_1, 1)
 
     dir_1.value = True #set throttle to in Direction A
 
+    #like the Arduino the Pcduino has an 8 bit PWM counter which can produce an array of frequencies but the PWM sysFS
+    #specifices time in nano seconds rather than the period. (commas are for readability only)
+    # 1KHz - 1,000,000
+    # 500Hz - 2,000,000
+    # 400Hz - 2,500,000
+    # 250Hz - 4,000,000
+    # 200Hz - 5,000,000
 
-kit = ServoKit(channels=16) #setup steering servo
-kit.servo[0].angle = 90
+
+def servo_setup():
+    pos = centre
+    kit = ServoKit(channels=16) #setup steering servo
+    kit.servo[0].angle = pos
 
 def readchar():
     fd = sys.stdin.fileno()
@@ -66,8 +82,8 @@ def readchar():
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     if ch == '0x03':
-       driver.pulseSpeed(Throttle_1, 0)
-       driver.enable(Throttle_1, 0)
+       pwmSet.pulseDuty(Throttle_1, 0)
+       pwmSet.enable(Throttle_1, 0)
  
        raise KeyboardInterrupt
     return ch
@@ -84,8 +100,8 @@ def readKey(getchar_fn=None):
     return chr(0x10 + ord(c3) - 65) #16=Up, 17=Down, 18=Right, 19=Left arrows
 
 mot_setup()
-speed = 60
-pos = 90
+servo_setup()
+
 
 try:
     while True:
@@ -93,33 +109,33 @@ try:
           if keyp == 'w' or ord(keyp) ==16:
                dir_1.value = True
                print('Forward')
-               driver.pulseSpeed(Throttle_1, speed)
+               pwmSet.pulseDuty(Throttle_1, speed)
                time.sleep(1)
-               driver.pulseSpeed(Throttle_1, 0)
+               pwmSet.pulseDuty(Throttle_1, 0)
 
           elif keyp == 's' or ord(keyp) == 17:
                  dir_1.value = False #set gpio Low to change direction
                  print('Reverse')
-                 driver.pulseSpeed(Throttle_1, speed)
+                 pwmSet.pulseDuty(Throttle_1, speed)
                  time.sleep(1)
-                 driver.pulseSpeed(Throttle_1, 0)
+                 pwmSet.pulseDuty(Throttle_1, 0)
 
           elif keyp == 'd' or ord(keyp) == 19:
-                 if pos > 25:
+                 if pos > left:
                     pos = pos - 5
-                 if pos == 25:
+                 if pos == left:
                     print('max limit reached')
                  kit.servo[0].angle = pos
-                 time.sleep(2) #give servo time to reach position
+                 time.sleep(0.5) #give servo time to reach position
                  print('turn left', pos)
 
           elif keyp == 'a' or ord(keyp) == 18:
-                 if pos < 115:
+                 if pos < right:
                     pos = pos + 5
-                 if pos == 115:
+                 if pos == right:
                     print('max limit reached')
                  kit.servo[0].angle = pos
-                 time.sleep(2)
+                 time.sleep(0.5)
                  print('turn right', pos)
 
           elif keyp == '.' or keyp == '>':
@@ -131,12 +147,17 @@ try:
                  print ('Deccel', speed)
           
           elif keyp == 'k' or ' ':
-               driver.pulseSpeed(Throttle_1, 0)
-               driver.enable(Throttle_1, 0)
+               pwmSet.pulseDuty(Throttle_1, 0)
+               pwmSet.enable(Throttle_1, 0)
                raise KeyboardInterrupt
                
-          elif keyp == 'l':
+          elif keyp == 'l': #Toggle On/Off the Main head lamps
+            if Hd_lamps == True:
+                Hd_lamps.value = False
+            else:
+                Hd_lamps.value = True
+
 
 except KeyboardInterrupt:
-       raise KeyboardInterrupt
-       sys.exit
+    raise KeyboardInterrupt
+    sys.exit
