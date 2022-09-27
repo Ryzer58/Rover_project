@@ -3,6 +3,7 @@
 #Raspberry Pi B 2/3
 #Arduino Uno
 #velleman Motor shield
+#Tower Pro MG 995 Servo
 #Buck converter
 #Lipo battery
 #3D printed chasis
@@ -15,7 +16,8 @@ import serial.tools.list_ports
 import sys
 import tty
 import termios
-#Predefine controller information to be adjusted based on data fetched back from the Arduino
+
+#Variables to store the control data feteched from the Arduino
 
 forMin = 0
 forMax = 0
@@ -34,8 +36,6 @@ servoLabel = ['Centre ','Max left ','Max right ']
 
 pos = 30
 speed = 0
-run_time = 0 #Just a place holder for a counter yet to be implemented
-arc_time = 1945 #todo time for the servo to swing 60 degree in microseconds (more use for automation rather than in manual mode)
 func = 0
 
 speedLock = 0
@@ -43,6 +43,7 @@ speedLock = 0
 myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
 print (myports)
 
+#Configure active serial port
 for port in myports:
     if '/dev/ttyACM0' in port:
         arduLink = '/dev/ttyACM0'
@@ -54,38 +55,28 @@ for port in myports:
         print("Error - Arduino not detected")
         
 piComm = serial.Serial(arduLink,19200,timeout = 2)
-#piComm = serial.Serial('/dev/ttyUSB0',19200,timeout = 2) #For compitability with Nano clones (CH304)
 piComm.flush()
 
 
-# Admittedly this is probably not the most efficient way of doing things, I will look for a better way
-# in the future but for now it should work for simply retrieving motor parameters from the Arduino
-motor = piComm.readline().decode('utf-8').lstrip('Motor: ') # Firstly read back motor configuration from Arduino
+#Fetch the motor operating parameters and store them to the array
+motor = piComm.readline().decode('utf-8').lstrip('Motor: ') # Excluding motor label left for debugging directly with serial monitor
 motData = motor.split(",")
 print("Motor Configuration: ")
 for m in range(len(motData)):
     motParam[m] = int(motData[m])
-    print(motLabel[m] + str(motData[m])) #Print back the retrieved value
+    print(motLabel[m] + str(motData[m]))
 
-servo = piComm.readline().decode('utf-8').lstrip('Servo: ') # Second read back servo parameters from Arduino
+#Fetch the Servo operating parameters and store them to the array
+servo = piComm.readline().decode('utf-8').lstrip('Servo: ')
 servoData = servo.split(",")
 print("Servo configuaration: ")
 for s in range(len(servoData)):
     servoParam[s] = int(servoData[s])
     print(servoLabel[s] + str(servoData[s]))
     
-#ensure values are actually set, doesnt quite work the same way as arduino, not the best way to do #things but should work
-
 revMin, revMax, forMin, forMax = [motParam[i] for i in [0 , 1, 2, 3]]
 serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
-#revMin = motParam[0]
-#revMax = motParam[1]
-#forMin = motParam[2]
-#forMax = motParam[3]
 
-#serCentre = servoParam[0]
-#serLeft = servoParam[1]
-#serRight = servoParam[2]
 
 def readchar():
     fd = sys.stdin.fileno()
@@ -100,6 +91,7 @@ def readchar():
     if ch == '0x03':
         raise KeyboardInterrupt
     return ch
+
 
 def readKey(getchar_fn=None):
     getchar = getchar_fn or readchar
@@ -117,26 +109,22 @@ def reset():
     reset = ['0','30','0']
     transmit()
 
+
 def stopped():
     stopping = ['0',str(pos),'0',]
     transmit()
+
 
 def transmit():
     toSend = (','.join(PiCommand) + '\n')
     piComm.write(toSend.encode('utf-8'))
 
+
 def recieve():
     toRecieve = piComm.readline().decode('utf-8').rstrip()
     recieveData = toRecieve.split(",")
+        
     
-    #todo - need to include a proper handler function to split data then process according to type
-    
-    #DataSet1 -core data:
-
-    #segment1 - status byte:
-    #use to confirm if we are moving and in what direction
-    #still need to learn how to disect the desired results then store appropriately
-    #remember to covert from a string to a byte
     
 
     #untested - need to upgrade arduino sketch once chasis body modifications are made
@@ -181,23 +169,13 @@ def recieve():
     #
     #   turn = False
     #
-    #segment2 - raw throttle data
-    #As we already know the direction this will instead return a direction PWM based on the sketch mapping
-    #then calculate what the value should be based on the original vector to confirm
-    #In the future this will probably be combind with additional sensor data such as speed 
     #
-    #segment3 - servo position
-    #This will just confirm that it has recieved the value we have expected it to.
-    #
+    
     #if recieveData[2] != pos:
     #   
     #    print("Steering error")
     #
-    #Dataset2 - Ultrasonic sensor data:
-    # probably do this in a second pass and think of a more organised way to handle
     #
-    #segements 1 - 3 - Readings from the array of sensorys, this will either be the forward or rear array, use status byte to
-    # identify which array is being sourcesed from.
 
 
 try:
