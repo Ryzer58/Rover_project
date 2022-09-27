@@ -285,14 +285,12 @@ try:
         transmit()
         
         recieve()
-
-        
+       
 
 except KeyboardInterrupt:
     reset()
     piComm.close()
     sys.exit()
     
-except FileNotFoundError:
-    print("Adruino not detected")
+
     
