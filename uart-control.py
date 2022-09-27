@@ -11,6 +11,7 @@ from operator import truediv
 from shutil import move
 from time import sleep
 import serial
+import serial.tools.list_ports
 import sys
 import tty
 import termios
@@ -39,7 +40,20 @@ func = 0
 
 speedLock = 0
 
-piComm = serial.Serial('/dev/ttyACM0',19200,timeout = 2)
+myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
+print (myports)
+
+for port in myports:
+    if '/dev/ttyACM0' in port:
+        arduLink = '/dev/ttyACM0'
+        print("ACM device found - Most likely Arduino UNO")
+    elif '/dev/ttyUSB0' in port:
+        arduLink = '/dev/ttyUSB0'
+        print("USB device found - Most likely Nano")
+    else:
+        print("Error - Arduino not detected")
+        
+piComm = serial.Serial(arduLink,19200,timeout = 2)
 #piComm = serial.Serial('/dev/ttyUSB0',19200,timeout = 2) #For compitability with Nano clones (CH304)
 piComm.flush()
 
