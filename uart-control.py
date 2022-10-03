@@ -40,10 +40,12 @@ func = 0
 
 speedLock = 0
 
+#Search and configure any active serial port
+
 myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
 print (myports)
 
-#Configure active serial port
+
 for port in myports:
     if '/dev/ttyACM0' in port:
         arduLink = '/dev/ttyACM0'
@@ -58,7 +60,7 @@ piComm = serial.Serial(arduLink,19200,timeout = 2)
 piComm.flush()
 
 
-#Fetch the motor operating parameters and store them to the array
+#Fetch the motor operating parameters and store results
 motor = piComm.readline().decode('utf-8').lstrip('Motor: ') # Excluding motor label left for debugging directly with serial monitor
 motData = motor.split(",")
 print("Motor Configuration: ")
@@ -66,7 +68,7 @@ for m in range(len(motData)):
     motParam[m] = int(motData[m])
     print(motLabel[m] + str(motData[m]))
 
-#Fetch the Servo operating parameters and store them to the array
+#Fetch the Servo operating parameters and store results
 servo = piComm.readline().decode('utf-8').lstrip('Servo: ')
 servoData = servo.split(",")
 print("Servo configuaration: ")
@@ -114,6 +116,7 @@ def stopped():
     stopping = ['0',str(pos),'0',]
     transmit()
 
+#Core data handlers for recieving and transmitting
 
 def transmit():
     toSend = (','.join(PiCommand) + '\n')
@@ -121,61 +124,45 @@ def transmit():
 
 
 def recieve():
-    toRecieve = piComm.readline().decode('utf-8').rstrip()
-    recieveData = toRecieve.split(",")
-        
-    
-    
+    recieve = piComm.readline().decode('utf-8').rstrip()
+    recieveData = recieve.split(",")
+    return recieveData
 
-    #untested - need to upgrade arduino sketch once chasis body modifications are made
-    #
-    #move =  128
-    #forward = 64
-    #turning = 32
-    #right = 16
-    #
-    #motion = int(recieveData[0]) & move
-    #
-    #if motion == move:
-    #    moving = True
-    #
-    #   dir = recieveData[0] & forward
-    #
-    #   if dir == forward:
-    #       goForward = True
-    #       #add in error check
-    #
-    #   else:
-    #       goForward = False
-    #
-    #else:
-    #   moving = False
-    #
-    #pivot = recieveData[0] & turning
-    #
-    #if pivot == turning:
-    #
-    #   turn = True
-    #   swing = recieveData[0] & right
-    #
-    #   if swing == right:
-    #
-    #       goRight = True
-    #
-    #   else:
-    #       goRight = False
-    #
-    #else:
-    #
-    #   turn = False
-    #
-    #
+
+#Returned data functions
+
+def returnedInput():
     
-    #if recieveData[2] != pos:
-    #   
-    #    print("Steering error")
-    #
-    #
+    exp_angle = pos
+    exp_motion = 0
+    #Compare the infomation we just sent against what is return to ensure there are no errors
+    control, motion, angle = recieve()
+
+    #first check the control, need to convert the value back into raw bits, only first 4 used
+    #Need to figure out how to compare bits properly
+
+    #second check the actual raw accelaration value, excluding direction
+    if speed <= 185:
+        exp_motion = speed + 70
+    else:
+        exp_motion = speed - 115
+
+    if exp_motion != motion:
+        print("speed error")
+    
+    #Finally check the angle against the expected one
+    if exp_angle != angle:
+        print("steering error")
+
+def sensorReadOut():
+    #Process the sensor data - currently just using an array of ultrasonics divided into 2
+    #groups of an array of 3 in the format left, centre, right
+    print("Sensors - Not yet supported")
+
+def batteryReadOut():
+    #Fetch the battery levels in format cell1, cell2, cell3
+    print("Battery level not yet supported")
+
 
 
 try:
@@ -260,9 +247,9 @@ try:
 
         PiCommand = [str(speed),str(pos),str(func)] #functions are work in progress so stub for now
         
-        transmit()
-        
-        recieve()
+        returnedInput()
+        sensorReadOut()
+        batteryReadOut()
        
 
 except KeyboardInterrupt:

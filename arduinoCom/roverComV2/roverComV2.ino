@@ -195,17 +195,16 @@ int update_steering(int pos){
   if (pos <= MAX_RIGHT and pos > CENTRE){
         
     bitSet(control, 4); //00110000 (48) - Angle bit = 1
-    Serial.println(pos);
   }
   else if (pos >= MAX_LEFT and pos < CENTRE){
         
-    bitClear(control, 4); //00100000 (32) - Angle bit = 0
-    Serial.println(pos);   
+    bitClear(control, 4); //00100000 (32) - Angle bit = 0   
   }
   else{
     //Serial.print("Centring steering \n");
     bitClear(control, 5);//set turning bit bit to 0
   }
+  //Serial.println(pos);
   str.write(pos);
   
   return pos;
