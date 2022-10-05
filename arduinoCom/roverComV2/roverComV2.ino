@@ -187,7 +187,7 @@ int update_velocity(bool dir, int accel){
     
   }
   analogWrite(MOTA_PWM, throttle);
-  return accel;
+  return throttle;
 }
 
 int update_steering(int pos){ 
