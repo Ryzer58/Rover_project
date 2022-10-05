@@ -250,12 +250,9 @@ try:
         returnedInput()
         sensorReadOut()
         batteryReadOut()
-       
+
 
 except KeyboardInterrupt:
     reset()
     piComm.close()
     sys.exit()
-    
-
-    
