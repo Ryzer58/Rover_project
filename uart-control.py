@@ -52,11 +52,11 @@ for port in myports:
         print("ACM device found - Most likely Arduino UNO")
     elif '/dev/ttyUSB0' in port:
         arduLink = '/dev/ttyUSB0'
-        print("USB device found - Most likely Nano")
+        print("USB device found - Most likely Nano/Clone")
     else:
         print("Error - Arduino not detected")
         
-piComm = serial.Serial(arduLink,19200,timeout = 2)
+piComm = serial.Serial(arduLink,19200,timeout = 3)
 piComm.flush()
 
 
@@ -132,11 +132,10 @@ def recieve():
 #Returned data functions
 
 def returnedInput():
-    
     exp_angle = pos
     exp_motion = 0
     #Compare the infomation we just sent against what is return to ensure there are no errors
-    control, motion, angle = recieve()
+    control, motion,angle = recieve()
 
     #first check the control, need to convert the value back into raw bits, only first 4 used
     #Need to figure out how to compare bits properly
@@ -144,14 +143,15 @@ def returnedInput():
     #second check the actual raw accelaration value, excluding direction
     if speed <= 185:
         exp_motion = speed + 70
-    else:
+
+    elif speed >= 190:
         exp_motion = speed - 115
 
-    if exp_motion != motion:
+    if exp_motion != int(motion):
         print("speed error")
     
     #Finally check the angle against the expected one
-    if exp_angle != angle:
+    if exp_angle != int(angle):
         print("steering error")
 
 def sensorReadOut():
