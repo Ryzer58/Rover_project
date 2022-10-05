@@ -8,8 +8,6 @@
 #Lipo battery
 #3D printed chasis
 
-from operator import truediv
-from shutil import move
 from time import sleep
 import serial
 import serial.tools.list_ports
@@ -40,27 +38,24 @@ func = 0
 
 speedLock = 0
 
-#Search and configure any active serial port
-
 myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
 print (myports)
 
-
+#Configure active serial port
 for port in myports:
     if '/dev/ttyACM0' in port:
         arduLink = '/dev/ttyACM0'
         print("ACM device found - Most likely Arduino UNO")
     elif '/dev/ttyUSB0' in port:
         arduLink = '/dev/ttyUSB0'
-        print("USB device found - Most likely Nano/Clone")
-    else:
-        print("Error - Arduino not detected")
+        print("USB device found - Most likely Nano/clone")
+
         
-piComm = serial.Serial(arduLink,19200,timeout = 3)
+piComm = serial.Serial(arduLink,19200,timeout = 2)
 piComm.flush()
 
 
-#Fetch the motor operating parameters and store results
+#Fetch the motor operating parameters and store them to the array
 motor = piComm.readline().decode('utf-8').lstrip('Motor: ') # Excluding motor label left for debugging directly with serial monitor
 motData = motor.split(",")
 print("Motor Configuration: ")
@@ -68,7 +63,7 @@ for m in range(len(motData)):
     motParam[m] = int(motData[m])
     print(motLabel[m] + str(motData[m]))
 
-#Fetch the Servo operating parameters and store results
+#Fetch the Servo operating parameters and store them to the array
 servo = piComm.readline().decode('utf-8').lstrip('Servo: ')
 servoData = servo.split(",")
 print("Servo configuaration: ")
@@ -116,7 +111,6 @@ def stopped():
     stopping = ['0',str(pos),'0',]
     transmit()
 
-#Core data handlers for recieving and transmitting
 
 def transmit():
     toSend = (','.join(PiCommand) + '\n')
@@ -124,35 +118,36 @@ def transmit():
 
 
 def recieve():
-    recieve = piComm.readline().decode('utf-8').rstrip()
-    recieveData = recieve.split(",")
-    return recieveData
+    toRecieve = piComm.readline().decode('utf-8').rstrip()
+    recieveData = toRecieve.split(",")
+    return recieveData    
 
-
-#Returned data functions
 
 def returnedInput():
     exp_angle = pos
     exp_motion = 0
     #Compare the infomation we just sent against what is return to ensure there are no errors
-    control, motion,angle = recieve()
+    control,motion,angle=recieve()
 
     #first check the control, need to convert the value back into raw bits, only first 4 used
     #Need to figure out how to compare bits properly
 
     #second check the actual raw accelaration value, excluding direction
     if speed <= 185:
-        exp_motion = speed + 70
+       exp_motion = speed + 70
 
     elif speed >= 190:
-        exp_motion = speed - 115
+       exp_motion = speed - 115
 
-    if exp_motion != int(motion):
-        print("speed error")
-    
+    if exp_motion!=int(motion):
+       print("speed error")
+       print(motion)
+
     #Finally check the angle against the expected one
-    if exp_angle != int(angle):
-        print("steering error")
+    if exp_angle!=int(angle):
+       print("steering error")
+       print(angle)
+
 
 def sensorReadOut():
     #Process the sensor data - currently just using an array of ultrasonics divided into 2
@@ -162,7 +157,6 @@ def sensorReadOut():
 def batteryReadOut():
     #Fetch the battery levels in format cell1, cell2, cell3
     print("Battery level not yet supported")
-
 
 
 try:
@@ -247,10 +241,13 @@ try:
 
         PiCommand = [str(speed),str(pos),str(func)] #functions are work in progress so stub for now
         
+        transmit()
+        
         returnedInput()
         sensorReadOut()
         batteryReadOut()
-
+        sleep(0.2)
+       
 
 except KeyboardInterrupt:
     reset()
