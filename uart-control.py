@@ -124,13 +124,27 @@ def returnedInput():
 
 
 def sensorReadOut():
-    #Process the sensor data - currently just using an array of ultrasonics divided into 2
+    #Process the sensor data - currently just using a single sensor at the front and rear rather than an array
     #groups of an array of 3 in the format left, centre, right
-    #dist_max = 200
-    #dist_min = 20
+    
+    dist_max = 200
+    dist_min = 20
     #dist_turn = 80
-    #left,centre,right=recieve(3)
-    #if centre < dist_min:
+    
+    left,centre,right=recieve(3)
+    
+    if centre < dist_min:
+        #Stop if the minimum threshold limit is reached
+        stopped()
+
+        #if right < dist_min or left <dist_min:
+        #Suggest turning in a free direction
+        #   if right < dist_min:
+            #suggest turning left
+            #if left < dist_min:
+
+        #if right < dist_min and left < dist_min:
+            #stopped
     
     print("Sensors - Not yet supported")
 

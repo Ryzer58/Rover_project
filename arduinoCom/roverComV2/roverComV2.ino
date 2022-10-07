@@ -14,7 +14,7 @@
  */
 
 #include <Servo.h>
-//#include <NewPing.h>
+#include <NewPing.h>
 //#include <Wire.h> //TODO BNO055
 
 
@@ -65,8 +65,6 @@ int cur_ang = CENTRE;    //Start at center point
  
 #define SONAR_NUM     2   // Number or sensors.
 #define MAX_DISTANCE 200  // Maximum distance (in cm) to ping.
-#define STOP_DISTANCE 10
-#define TURN_DISTANCE 40  //Distance at the which the rover will start to turn at (TODO)  
 #define PING_INTERVAL 35  // Milliseconds between sensor pings (29ms is about the min to 
 //avoid cross-sensor echo).
 
@@ -160,7 +158,7 @@ void loop() {
       }
       
       transmit(control, motion, cur_ang);
-      //scanning();   //Currently disabled - TODO
+      scanning(dir);   //Currently only supports single sensor in either direction
       //batt_check(); //Currently disabled
     }
   }
