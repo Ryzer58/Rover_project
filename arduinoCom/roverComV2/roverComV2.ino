@@ -88,6 +88,9 @@ void setup() {
   //intialise_sensors(); //disabed - TODO
   
   Serial.begin(19200);
+  //while(!Serial){
+  //  //needed for leonardo or similiar  
+  //}
   Serial.print("Motor: ");
   Serial.print(MIN_REVERSE); Serial.print(","); //Send values to the pi so it is full aware of what it is
   Serial.print(MAX_REVERSE); Serial.print(",");//working with.

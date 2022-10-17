@@ -100,12 +100,45 @@ def recieve(process):
 def returnedInput():
     exp_angle = pos
     exp_motion = 0
+
+    set_dir = 192 #bit 11000000
+    set_turn = 48 #bit 00110000
+
     #Compare the infomation we just sent against what is return to ensure there are no errors
     control,motion,angle=recieve(2)
 
-    #first check the control, need to convert the value back into raw bits, only first 4 used
-    #Need to figure out how to compare bits properly
+    
+    #first check the control, which is configure in bits to see roughly if the rover is 
+    # behaving as expected.
 
+    dir_check = control & set_dir
+
+    if dir_check == 0 and speed != 0:
+        print("Error - not in motion")
+
+    elif dir_check != 0 and speed == 0:
+        print("Error - not stopped")
+
+    if dir_check == set_dir and speed < forMin:
+        print("Error - not driving forward")
+
+    elif dir_check == 128 and speed > revMax:
+        print("Error - not driving in Reverse")
+
+
+    #See if we are turn and which way we are turning
+    steer_check = control & set_turn
+
+    if steer_check != 30 and exp_angle == serCentre:
+        print("Error - steering not Centred")
+
+    elif steer_check == set_turn and exp_angle < serCentre:
+        print("Error - failed to turn Right")
+
+    elif steer_check == 32 and exp_angle > serCentre:
+        print("Error - failed to turn Left")
+
+    
     #second check the actual raw accelaration value, excluding direction
     if speed <= 185:
        exp_motion = speed + rev_offset
@@ -114,12 +147,12 @@ def returnedInput():
        exp_motion = speed - fwd_offset
 
     if exp_motion!=int(motion):
-       print("speed error")
+       print("Error - speed does not match expected value")
        print(motion)
 
     #Finally check the angle against the expected one
     if exp_angle!=int(angle):
-       print("steering error")
+       print("Error - angle does not match expected position")
        print(angle)
 
 
