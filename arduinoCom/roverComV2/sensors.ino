@@ -43,8 +43,7 @@ int scanning(bool dir){
   if (dir == true){ //Use forward facing sonar(s)
 
     act_sensor = 0;
-
-    //i = 0 //reserved for later use
+    //For now just we are just using a single sensor mounted at the front and rear
  
   }
 

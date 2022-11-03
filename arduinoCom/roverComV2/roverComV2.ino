@@ -139,6 +139,7 @@ void loop() {
         else{
           
           halt(); //Stop the motors, either if intentional or if an invalid velocity is specified
+          motion = 0;
           bitClear(control, 7); //set motion bit to 0
           
 
