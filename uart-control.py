@@ -157,8 +157,8 @@ def returnedInput():
 
 
 def sensorReadOut():
-    #Process the sensor data - currently just using a single sensor at the front and rear rather than an array
-    #groups of an array of 3 in the format left, centre, right
+    #Process the sensor data - currently just using a single sensor at the front and rear for now. Later expand to using
+    #an array of 3 in the format left, centre, right. One array position at the front the other at the rear
     
     dist_max = 200
     dist_min = 20
