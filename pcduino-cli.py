@@ -20,22 +20,23 @@ import digitalio
 from pcduino import pwmSet #currently used for PWM output
 from adafruit_servokit import ServoKit
 
-#Motor 1 configuration - connect matching jumper on dir A header
+#Motor 1 configuration - Match with the jumper set on dir A header, to control motor direction
 #dir_1 = digitalio.DigitalInOut(board.D2)
 dir_1 = digitalio.DigitalInOut(board.D4)
 #dir_1 = digitalio.DigitalInOut(board.D7)
 dir_1.direction = digitalio.Direction.OUTPUT
 
-Throttle_1 = "pwm0"
+Throttle_1 = "pwm0" #Pcduino only has two hardware PWM channels, Channel 0 is located on pin D5. 
 speed = 60
 
-#Motor 2 configuration - connect matching jumper on dir B header
+#Motor 2 configuration - Match with the jumper set on dir B header, to control motor direction
 #dir_2 = digitalio.DigitalInOut(board.D8)
 #dir_2 = digitalio.DigitalInOut(board.D12)
 #dir_2 = digitalio.DigitalInOut(board.D13)
 #dir_2.direction = digitalio.Direction.OUTPUT
 
-#Throttle_2 = "pwm1"
+#Throttle_2 = "pwm1" # PWM1 is located on D6, therefore a jumper wire to the PWMB header will
+#be needed to use this channel as well.
 
 #Servo positions
 centre = 30
@@ -52,7 +53,6 @@ Hd_lamps.direction = digitalio.Direction.OUTPUT
 def mot_setup():
     pwmSet.pulseDuration(Throttle_1, 25000000) #Period value in nanoseconds
     pwmSet.pulseDuty(Throttle_1, 0) #start at a stationary position
-    pwmSet.polarity(Throttle_1, 0) #Not strictly necessary as it should already be set 0 using the correction script
     pwmSet.enable(Throttle_1, 1)
 
     dir_1.value = True #set throttle to in Direction A
@@ -160,4 +160,5 @@ try:
 
 except KeyboardInterrupt:
     raise KeyboardInterrupt
-    sys.exit
+    
+    sys.exit()
