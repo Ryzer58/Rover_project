@@ -160,4 +160,5 @@ try:
 
 except KeyboardInterrupt:
     raise KeyboardInterrupt
-    sys.exit
+    
+    sys.exit()

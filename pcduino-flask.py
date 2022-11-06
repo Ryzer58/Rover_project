@@ -13,11 +13,12 @@
 # can be selected below
 
 import time
+import sys
 import serial
 import board #Import the board profile from Blinka libraries
 import digitalio
 from adafruit_servokit import ServoKit #I2C servo shield libraries
-from config import driver
+from pcduino import pwmSet
 from flask import Flask, render_template, request
 
 app = Flask (__name__, static_url_path = '')
@@ -46,23 +47,23 @@ Throttle_1 = "pwm0" #Pin 5 Pcduino
 #Throttle_2 = "pwm1" #Pin 6 Pcduino
 
 # Speed and drive control variables - remember to set pwm and directional control variables
-driver.pulseDuration(Throttle_1, 1000000)
-driver.pulseSpeed(Throttle_1, 0) #start at a stationary position
-driver.polarity(Throttle_1, 0)
-driver.enable(Throttle_1, 1)
+pwmSet.pulseDuration(Throttle_1, 1000000)
+pwmSet.pulseDuty(Throttle_1, 0) #start at a stationary position
+pwmSet.polarity(Throttle_1, 0)
+pwmSet.enable(Throttle_1, 1)
 speed_offset = 84
 run_time = 0.750
-cur_dir
-direction
+
+
 
 # Servo neutral position (home)
 kit = ServoKit(channels=16)
 kit.servo[0].angle = 90 #Steering servo
-kit.servo[1].angle = 90 #Camera pan servo
+#kit.servo[1].angle = 90 #Camera pan servo
 turn_offset = 0.166
 
 pan_serv
-dri_serv
+#dri_serv #Reserved for later use when implementing a camera pivot
 
 time.sleep (3) # A little dwell for settling down time
 
@@ -313,13 +314,13 @@ def go_forward ( ): # Motor drive functions
     global speed
     
     dir_1.value = True
-    driver.pulseSpeed(Throttle_1, speed)
+    pwmSet.pulseDuty(Throttle_1, speed)
         
 def go_backward ( ):
     global speed
 
     dir_1.value = False
-    driver.pulseSpeed(Throttle_1, speed)
+    pwmSet.pulseDuty(Throttle_1, speed)
         
    
 
@@ -340,7 +341,7 @@ def sw_right ( ):
     kit.servo[0].angle = dri_serv
 
 def halt ( ):
-    driver.pulseSpeed(Throttle_1, 0)
+    pwmSet.pulseDuty(Throttle_1, 0)
     kit.servo[0].angle = 90
 
 if __name__ == "__main__" :
