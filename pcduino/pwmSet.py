@@ -3,11 +3,11 @@ import math
 HARD_PWM_PINS = ('pwm0', 'pwm1')
 SOFT_PWM_PINS = ('gpio3', 'gpio9','gpio10','gpio11')
 
-PIN_MAP = "/sys/devices/platform/soc@01c00000/1c20e00.pwm/pwm/pwmchip0/%s"
-PIN_DUR = "/sys/devices/platform/soc@01c00000/1c20e00.pwm/pwm/pwmchip0/%s/period"
-PIN_DUTY_CYCLE = "/sys/devices/platform/soc@01c00000/1c20e00.pwm/pwm/pwmchip0/%s/duty_cycle"
-SET_ENABLE = "/sys/devices/platform/soc@01c00000/1c20e00.pwm/pwm/pwmchip0/%s/enable"
-SET_POLARITY = "/sys/devices/platform/soc@01c00000/1c20e00.pwm/pwm/pwmchip0/%s/polarity"
+PIN_MAP = "/sys/devices/platform/soc/1c20e00.pwm/pwm/pwmchip0/%s"
+PIN_DUR = "/sys/devices/platform/soc/1c20e00.pwm/pwm/pwmchip0/%s/period"
+PIN_DUTY_CYCLE = "/sys/devices/platform/soc/1c20e00.pwm/pwm/pwmchip0/%s/duty_cycle"
+SET_ENABLE = "/sys/devices/platform/soc/1c20e00.pwm/pwm/pwmchip0/%s/enable"
+SET_POLARITY = "/sys/devices/platform/soc/1c20e00.pwm/pwm/pwmchip0/%s/polarity"
 
 DISABLE = 0
 
@@ -97,5 +97,7 @@ def servo(channel, angle):
     with open(PIN_DUTY_CYCLE % id, 'w') as f:
        f.write(str(dutyCycle))
 
-#def softPwm
-#To implement later
+# def softPwm
+# To implement later
+# In the original OS 3, 9, 10 provide software pwm
+# try to re-emulate that here at some point
