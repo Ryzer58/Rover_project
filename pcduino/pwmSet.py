@@ -24,15 +24,18 @@ def pwmCheck(channel):
     else:
         raise InvalidChannelException
 
-def pulseDuration(channel, period):
+def pulseDuration(channel, freq):
     """write the total duration to period file"""
     id = pwmCheck(channel)
+
+    period = int((1/freq)*1000000000)
     with open(PIN_DUR % id, 'w') as f:
         f.write(str(period))
 
-    #Inline with the PWM framework the value is written in nanoseconds
-    #maybe later add an arguement that takes the frequency and converts
-    #it into a nanosecond value
+    # Inline with the PWM framework the value is written in nanoseconds
+    # maybe later add an arguement that takes the frequency and converts
+    # it into a nanosecond value. Be mindful that the Pcduino2 only has
+    # an 8 bit PWM counter that is limited by the selected prescaler.
     
 
 def pulseDuty(channel, value):
@@ -42,11 +45,10 @@ def pulseDuty(channel, value):
     with open(PIN_DUR % id, 'r') as f:
          freq = f.read()
     period = int(freq)
-    rep = (value /255)*period
-    level = int(rep)
+    prop = int((value /255)*period)
     f.close
     with open(PIN_DUTY_CYCLE % id, 'w') as f:
-        f.write(str(level))
+        f.write(str(prop))
         
 
 def enable(channel, use):
@@ -62,7 +64,7 @@ def polarity(channel, dir):
         f.write('inveresed' if dir == 1 else 'normal')
 
 def servo(channel, angle):
-    """Map the angle to an appropriate duty cycle [works on Pcduino3 only] - Servos typical require a duty cycle of 5 (1.0ms) to 10%(2.0ms), confirm with servo datasheet"""
+    """Map the angle to an appropriate duty cycle (works on Pcduino3 only)"""
     id = pwmCheck(channel)
     
     value = 0(angle/180)*2000000

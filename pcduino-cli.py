@@ -26,7 +26,7 @@ dir_1 = digitalio.DigitalInOut(board.D4)
 #dir_1 = digitalio.DigitalInOut(board.D7)
 dir_1.direction = digitalio.Direction.OUTPUT
 
-Throttle_1 = "pwm0" #Pcduino only has two hardware PWM channels, Channel 0 is located on pin D5. 
+Throttle_1 = "pwm0" #Pcduino hardware PWM channel (pin D5). 
 speed = 60
 
 #Motor 2 configuration - Match with the jumper set on dir B header, to control motor direction
@@ -43,6 +43,10 @@ centre = 30
 right = 60
 left = 0
 
+pos = centre
+kit = ServoKit(channels=16) #setup steering servo
+kit.servo[0].angle = pos
+
 #configure lighting controls
 Hd_lamps = digitalio.DigitalInOut(board.D8)
 Hd_lamps.direction = digitalio.Direction.OUTPUT
@@ -50,26 +54,12 @@ Hd_lamps.direction = digitalio.Direction.OUTPUT
 #Ind_rt =
 #Rear =
 
-def mot_setup():
-    pwmSet.pulseDuration(Throttle_1, 25000000) #Period value in nanoseconds
-    pwmSet.pulseDuty(Throttle_1, 0) #start at a stationary position
-    pwmSet.enable(Throttle_1, 1)
 
-    dir_1.value = True #set throttle to in Direction A
+pwmSet.pulseDuration(Throttle_1, 400) #Period value in nanoseconds
+pwmSet.pulseDuty(Throttle_1, 0) #start at a stationary position
+pwmSet.enable(Throttle_1, 1)
 
-    #like the Arduino the Pcduino has an 8 bit PWM counter which can produce an array of frequencies but the PWM sysFS
-    #specifices time in nano seconds rather than the period. (commas are for readability only)
-    # 1KHz - 1,000,000
-    # 500Hz - 2,000,000
-    # 400Hz - 2,500,000
-    # 250Hz - 4,000,000
-    # 200Hz - 5,000,000
-
-
-def servo_setup():
-    pos = centre
-    kit = ServoKit(channels=16) #setup steering servo
-    kit.servo[0].angle = pos
+dir_1.value = True #set throttle to in Direction A
 
 def readchar():
     fd = sys.stdin.fileno()
@@ -99,9 +89,6 @@ def readKey(getchar_fn=None):
     c3 = getchar()
     return chr(0x10 + ord(c3) - 65) #16=Up, 17=Down, 18=Right, 19=Left arrows
 
-mot_setup()
-servo_setup()
-
 
 try:
     while True:
@@ -120,7 +107,7 @@ try:
                  time.sleep(1)
                  pwmSet.pulseDuty(Throttle_1, 0)
 
-          elif keyp == 'd' or ord(keyp) == 19:
+          elif keyp == 'a' or ord(keyp) == 19:
                  if pos > left:
                     pos = pos - 5
                  if pos == left:
@@ -129,7 +116,7 @@ try:
                  time.sleep(0.5) #give servo time to reach position
                  print('turn left', pos)
 
-          elif keyp == 'a' or ord(keyp) == 18:
+          elif keyp == 'd' or ord(keyp) == 18:
                  if pos < right:
                     pos = pos + 5
                  if pos == right:
