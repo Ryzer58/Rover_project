@@ -24,13 +24,16 @@ def pwmCheck(channel):
     else:
         raise InvalidChannelException
 
-def pulseDuration(channel, freq):
+def pulseDuration(channel, period):
     """write the total duration to period file"""
     id = pwmCheck(channel)
     with open(PIN_DUR % id, 'w') as f:
-        f.write(str(freq))
+        f.write(str(period))
 
-    #Currently broken via sysFs on A10
+    #Inline with the PWM framework the value is written in nanoseconds
+    #maybe later add an arguement that takes the frequency and converts
+    #it into a nanosecond value
+    
 
 def pulseDuty(channel, value):
     """set the duty cycle"""
@@ -70,34 +73,12 @@ def servo(channel, angle):
     scaler = (angle - 0) / 180
     value = 1000000 + (scaler * 1000,000)
     
-    
-    # duty num | width | Angle - resoltion 9 degrees, possibly 1.8
-    #  2000000    2.0    180
-    #  1950000    1.95   171                
-    #  1900000    1.9    162            
-    #  1850000    1.85   153
-    #  1800000    1.8    144
-    #  1750000    1.75   135
-    #  1700000    1.70   126
-    #  1650000    1.65   117
-    #  1600000    1.6    108
-    #  1550000    1.55    99         
-    #  1500000    1.5     90 
-    #  1450000    1.45    81
-    #  1400000    1.4     72
-    #  1350000    1.35    63
-    #  1300000    1.3     54
-    #  1250000    1.25    45 
-    #  1200000    1.2     36 
-    #  1150000    1.15    27 
-    #  1100000    1.1     18  
-    #  1050000    1.05    9
-    #  1000000    1.0     0
     dutyCycle = int(value)
     with open(PIN_DUTY_CYCLE % id, 'w') as f:
        f.write(str(dutyCycle))
 
-# def softPwm
-# To implement later
-# In the original OS 3, 9, 10 provide software pwm
-# try to re-emulate that here at some point
+#def soft_duration(channel, angle):
+#    """For use with pins that are not hardware capbale"""
+
+#def soft_duty(channel, angle):
+#    """soft duty"""
