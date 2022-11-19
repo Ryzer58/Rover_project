@@ -2,7 +2,7 @@
 #
 # Wifi/Web driven Rover
 #
-# Written by Ryzer - 2021
+# Written by Ryzer - 2021/2022 (v1.0)
 #
 # Uses Adafruit Blinka, pyserial and Flask
 #
@@ -27,8 +27,8 @@ try:
    # Change the baud rate here if diffrent than 19200
    gps_nav = serial.Serial ('/dev/ttyS2', 9600)
 except IOError:
-   print ("GPS not found")
-   sys.exit (0)
+   print ("UART not enabled - not able to use GPS")
+   
 
 #Motor 1 configuration - connect matching jumper on dir A header
 dir_1 = digitalio.DigitalInOut(board.D2)
@@ -47,7 +47,7 @@ Throttle_1 = "pwm0" #Pin 5 Pcduino
 #Throttle_2 = "pwm1" #Pin 6 Pcduino
 
 # Speed and drive control variables - remember to set pwm and directional control variables
-pwmSet.pulseDuration(Throttle_1, 1000000)
+pwmSet.pulseDuration(Throttle_1, 400)
 pwmSet.pulseDuty(Throttle_1, 0) #start at a stationary position
 pwmSet.polarity(Throttle_1, 0)
 pwmSet.enable(Throttle_1, 1)
@@ -55,207 +55,159 @@ speed_offset = 84
 run_time = 0.750
 
 
+#Variables for the main driving servo (Servo shield channel 0)
+right_dri = 60
+left_dri = 0
+centre_dri = 30
 
-# Servo neutral position (home)
+#Variables for the camera moving servo (Servo shield channel 1)
+right_pan = 45
+left_pan = 135
+centre_pan = 90
+
+pan_servo = centre_pan
+dri_servo = centre_dri
+
 kit = ServoKit(channels=16)
-kit.servo[0].angle = 90 #Steering servo
-#kit.servo[1].angle = 90 #Camera pan servo
+kit.servo[0].angle = centre_dri #Steering servo
+kit.servo[1].angle = centre_pan #Camera pan servo
 turn_offset = 0.166
-
-pan_serv
-#dri_serv #Reserved for later use when implementing a camera pivot
 
 time.sleep (3) # A little dwell for settling down time
 
-#
-# URI handlers - all the bot page actions are done here
-#
-# Send out the bots control page (home page)
 
 @app.route ("/")
-def index ( ):
+def index():
    return render_template ('index.html', name = None)
 
-@app.route ("/forward")
-def forward ( ):
+
+#Directional controls
+
+@app.route("/forward")
+def forward():
    global run_time
 
-   print ("Forward")
+   print("Forward")
    dir_1.value = True
-   go_forward ( )
+   go_forward()
    
-   time.sleep (0.100 + run_time) # sleep 100ms + run_time
+   time.sleep(0.100 + run_time) # sleep 100ms + run_time
 
    if run_time > 0:  # If not continuous, then halt after delay
-      halt ( )
+      halt()
 
    return "ok"
 
 @app.route ("/backward")
-def backward ( ):
+def backward():
    global run_time
 
-   print ("Backward")
+   print("Backward")
    dir_1.value = False
    go_backward()
    
-   time.sleep (0.100 + run_time) # sleep 100ms + run_time
+   time.sleep(0.100 + run_time) # sleep 100ms + run_time
    
    if run_time > 0: # If not continuous, then halt after delay
-      halt ( )
+      halt()
 
    return "ok"
 
-@app.route ("/left")
-def left ( ):
+@app.route("/left")
+def left():
    global turn_offset
 
-   print ("Left")
+   print("Left")
    sw_left()
    
-   time.sleep (0.500 - turn_offset) # sleep @1/2 second
+   time.sleep(0.500 - turn_offset) # sleep @1/2 second
    
-   halt ( ) # stop
-   time.sleep (0.100)
+   halt() # stop
+   time.sleep(0.100)
    return "ok"
 
 @app.route ("/right")
-def right ( ):
+def right():
    global turn_offset
 
-   print ("Right")
-   sw_right ( )
+   print("Right")
+   sw_right()
 
    time.sleep (0.500 - turn_offset) # sleep @1/2 second - need to adjust for servp
 
-   halt ( ) # stop
-   time.sleep (0.100)
+   halt() # stop
+   time.sleep(0.100)
    return "ok"
 
-@app.route ("/sharpLfFor")
-def sharpLfFor ( ):
-   global turn_offset
-
-   print ("Left forward turn")
-   dir_1.value = True
-   sw_left ( )
-   go_forward
-
-   time.sleep (0.250 - (turn_offset / 2)) # sleep @1/8 second
-   
-   halt ( ) # stop
-   time.sleep (0.100)
-   return "ok"
-
-@app.route ("/sharpLfRev")
-def sharpLfRev ( ):
-   global turn_offset
-
-   print ("Left forward turn")
-   dir_1.value = False
-   sw_left( )
-   go_backward()
-
-   time.sleep (0.250 - (turn_offset / 2)) # sleep @1/8 second
-   
-   halt ( ) # stop
-   time.sleep (0.100)
-   return "ok"
-   
-@app.route ("/sharpRtFor")
-def sharpRtFor ( ):
-   global turn_offset
-
-   print ("Right forward turn")
-   dir_1.value = True
-   sw_right ( )
-   go_forward()
-   
-   time.sleep (0.250 - (turn_offset / 2)) # sleep @1/8 second
-
-   halt ( ) # stop
-   time.sleep (0.100)
-   return "ok"
-   
-@app.route ("/sharpRtRev")
-def sharpRtRev ( ):
-   global turn_tm_offset
-
-   print ("Right forward turn")
-   dir_1.value = False
-   sw_right ( )
-   go_backward()
-
-   time.sleep (0.250 - (turn_offset / 2)) # sleep @1/8 second
-
-   halt ( ) # stop
-   time.sleep (0.100)
-   return "ok"
-
-@app.route ("/stop")
-def stop ( ):
+@app.route("/stop")
+def stop():
    global last_direction
 
-   print ("Stop")
-   halt ( )
+   print("Stop")
+   halt()
 
-   time.sleep (0.100) # sleep 100ms
+   time.sleep(0.100) # sleep 100ms
    return "ok"
 
+# Camera operating controls
 
-@app.route ("/panlt") #Cam Servo control functions
+@app.route("/panlt") #Cam Servo control functions
 def panlf ( ):
-   global pan_serv
+   global pan_servo
 
    print ("Panlt")
-   pan_serv += 5
-   if pan_serv < 135:
-      pan_serv = 135
-   kit.servo[0].angle = pan_serv
+   
+   if pan_servo < 135:
+      pan_servo += 5
+   
+   kit.servo[0].angle = pan_servo
    time.sleep (0.150) # sleep 150ms
    return "ok"
 
-@app.route ("/panrt")
-def panrt ( ):
-   global pan_serv
+@app.route("/panrt")
+def panrt():
+   global pan_servo
 
-   print ("Panrt")
-   pan_serv -= 5
-   if pan_serv > 45:
-      pan_serv = 45
-   kit.servo[0].angle = pan_serv
+   print("Panrt")
+   
+   if pan_servo < right_pan:
+      pan_servo -= 5
+   
+   kit.servo[0].angle = pan_servo
    time.sleep (0.150) # sleep 150ms
    return "ok"
 
-@app.route ("/home")
-def home ( ):
-   global pan_serv
+@app.route("/home")
+def home():
+   global pan_servo
 
-   print ("Home")
-   kit.servo[0].angle = 90
-   time.sleep (0.150) # sleep 150ms
+   print("Home")
+   kit.servo[1].angle = 90
+   time.sleep(0.150) # sleep 150ms
    return "ok"
 
-@app.route ("/panfull_lt")
-def panfull_lt ( ):
-   global pan_serv
+@app.route("/panfull_lt")
+def panfull_lt():
+   global pan_servo
 
-   print ("Pan full left")
+   print("Pan full left")
    kit.servo[1].angle = 135
-   time.sleep (0.150) # sleep 150ms
+   time.sleep(0.150) # sleep 150ms
    return "ok"
 
-@app.route ("/panfull_rt")
-def panfull_rt ( ):
-   global pan_serv
+@app.route("/panfull_rt")
+def panfull_rt():
+   global pan_servo
 
-   print ("Pan full right")
+   print("Pan full right")
    kit.servo[1].angle = 45
-   time.sleep (0.150) # sleep 150ms
+   time.sleep(0.150) # sleep 150ms
    return "ok"
 
-@app.route ("/speed_low")
-def speed_low ( ):
+# Throttle control (preset speed profiles)
+
+@app.route("/speed_low")
+def speed_low():
    global speed, turn_offset
 
    speed = 42 #Calibrate according to motor used 
@@ -263,8 +215,8 @@ def speed_low ( ):
    time.sleep (0.150) # sleep 150ms
    return "ok"
 
-@app.route ("/speed_mid") #speed control presets
-def speed_mid ( ):
+@app.route("/speed_mid") #speed control presets
+def speed_mid():
    global speed, turn_offset
 
    speed = 84
@@ -272,8 +224,8 @@ def speed_mid ( ):
    time.sleep (0.150) # sleep 150ms
    return "ok"
 
-@app.route ("/speed_hi")
-def speed_hi ( ):
+@app.route("/speed_hi")
+def speed_hi():
    global speed, last_direction, turn_offset
 
    speed = 126
@@ -281,42 +233,44 @@ def speed_hi ( ):
    time.sleep (0.150) # sleep 150ms
    return "ok"
 
-@app.route ("/continuous") #running duration
-def continuous ( ):
+# Run time - Configure how long the rover will move for
+
+@app.route("/continuous") #running duration
+def continuous():
    global run_time
 
-   print ("Continuous run")
+   print("Continuous run")
    run_time = 0
-   time.sleep (0.100) # sleep 100ms
+   time.sleep(0.100) # sleep 100ms
    return "ok"
 
-@app.route ("/mid_run")
-def mid_run ( ):
+@app.route("/mid_run")
+def mid_run():
    global run_time
 
-   print ("Mid run")
+   print("Mid run")
    run_time = 0.750
-   halt ( )
-   time.sleep (0.100) # sleep 100ms
+   halt()
+   time.sleep(0.100) # sleep 100ms
    return "ok"
 
-@app.route ("/short_time")
-def short_time ( ):
+@app.route("/short_time")
+def short_time():
    global run_time
 
-   print ("Short run")
+   print("Short run")
    run_time = 0.300
-   halt ( )
-   time.sleep (0.100) # sleep 100ms
+   halt()
+   time.sleep(0.100) # sleep 100ms
    return "ok"
 
-def go_forward ( ): # Motor drive functions
+def go_forward(): # Motor drive functions
     global speed
     
     dir_1.value = True
     pwmSet.pulseDuty(Throttle_1, speed)
         
-def go_backward ( ):
+def go_backward():
     global speed
 
     dir_1.value = False
@@ -324,23 +278,30 @@ def go_backward ( ):
         
    
 
-def sw_left ( ): # Servo steering functions
-    global dri_serv
+def sw_left(): # Servo steering functions
+   global dri_servo
 
-    dri_serv += 5
-    if dri_servo > 105:
-        dri_servo = 105
-    kit.servo[0].angle = dri_serv
+   
+   if dri_servo > left_dri:
+         dri_servo -= 5
+
+   else:
+      print("Left limit reached")
+    
+   kit.servo[0].angle = dri_servo
         
-def sw_right ( ):
-    global dri_serv
+def sw_right():
+   global dri_servo
 
-    dri_serv -= 5
-    if dri_servo < 65:
-        dri_servo = 65
-    kit.servo[0].angle = dri_serv
+   if dri_servo < right_dri:
+      dri_servo += 5
+   
+   else:
+      print("Right limit reached")
+   
+   kit.servo[0].angle = dri_servo
 
-def halt ( ):
+def halt():
     pwmSet.pulseDuty(Throttle_1, 0)
     kit.servo[0].angle = 90
 
