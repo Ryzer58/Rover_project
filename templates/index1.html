@@ -9,7 +9,7 @@
 <html>
 <head>
 	<link rel="stylesheet" type="text/css" href= "../static/style.css">
-	<title>Pcduino web controller V1.0</title>
+	<title>Pcduino web controller V1.5</title>
 <script type="javascript">
 document.onkeypress = keypressed;
 var last_action = "";
@@ -75,7 +75,7 @@ function keypressed (event) {
 </head>
 <body>
 	<center>
-		Rover Control Center V1.2
+		Rover Control Center V1.5
 	</center>
 	<font face="Arial">
 	
@@ -165,37 +165,38 @@ function keypressed (event) {
         id="imgpanall_rt" onclick="sendMotion ('panfull_rt');"/>
 	</div>
 	
-	<div class = "SpeedTime">
-		<div>
-			<center>
-				<input type="radio" name="speed" value="42" id="speed_low"
-				onclick="sendMotion ('speed_low');">Low throttle
-
-				<input type="radio" name="speed" value="84" id="speed_mid"
-				onclick="sendMotion ('speed_mid');" checked>Mid throttle
+	<div class = "speedAndRun">
 		
-				<input type="radio" name="speed" value="126" id="speed_hi"
-				onclick="sendMotion ('speed_hi');">High throttle
-			</center>
+		<div class = "speed-param">Throttle:
+			
+			<input type="radio" name="speed" value="42" id="speed_low" checked />
+			<label for="speed_low" class="speed-param go-slow" onclick="sendMotion ('speed_low');">Low</label>
+
+			<input type="radio" name="speed" value="84" id="speed_mid" />
+			<label for="speed_mid" class="speed-param go-mid" onclick="sendMotion ('speed_mid');" >Mid</label>
+		
+			<input type="radio" name="speed" value="126" id="speed_hi" />
+			<label for="speed_hi" class="speed-param go-fast" onclick="sendMotion ('speed_hi');">High</label>
+
 		</div>
 		
-		<div>
-			<center>
-				<input type="radio" name="run_time" value="42" id="short_time"
-				onclick="sendMotion ('short_time');">Short run
+		<div class ="run-duration">Run time:
+			
+			<input type="radio" name="run_time" value="42" id="short_time" />
+			<label for="short_time" class="run-duration short-time" onclick="sendMotion ('short_time');">Short</label>
          
-				<input type="radio" name="run_time" value="84" id="mid_run"
-				onclick="sendMotion ('mid_run');" checked>Med run
+			<input type="radio" name="run_time" value="84" id="mid_run" checked />
+			<label for="mid_run" class="run-duration mid-time" onclick="sendMotion ('mid_run');">Med</label>
 		
-				<input type="radio" name="run_time" value="126" id="continuous"
-				onclick="sendMotion ('continuous');">Continuous
-			</center>
+			<input type="radio" name="run_time" value="126" id="continuous" />
+			<label for="continuous" class="run-duration constant-run" onclick="sendMotion ('continuous');">Continuous</label>
+			
 		</div>
 		
 	</div>
 	
 	<div class="feed">
-			<img src="http://192.168.0.170:8080/?action=stream" alt="Feed Offline">
+			<img src="http://Pcduino2-1.local/?action=stream" alt="Feed Offline">
 	</div>
    
 	</font>

@@ -43,6 +43,7 @@
 	top: 100px;
 	right: -120px;
 	text-decoration: Stop;
+
 }
 
 .right{
@@ -68,6 +69,7 @@
 	position: absolute;
 	bottom: 40px;
 	left:110px;
+
 }
 
 .cam-buttons{
@@ -82,6 +84,7 @@
 	text-decoration: none;
 	display: inline-block;
 	font-size: 20px;
+
 }
 
 .pan-left-full{
@@ -100,6 +103,7 @@
 
 	bottom: 26px;
 	left: 170px;
+
 }
 
 .pan-right {
@@ -111,14 +115,100 @@
 .pan-right-full{
 	
 	left:180px;
-}
 
-.speedTime{
-	
 }
 
 .feed{
 	
 	position: absolute;
 	left: 150px;
+
 }
+
+.speed-param{
+	
+	position: absolute;
+	right: 30px;
+	bottom: 260px;
+	text-align: center;
+	list-style: none;
+	display: inline-block;
+
+}
+
+.go-slow{
+
+	position: relative;
+	display: inline-block;
+	text-align: center;
+	bottom: 20px;
+	width: 60px;
+	right: 50px;
+
+}
+
+.go-mid{
+
+	position: relative;
+	display: inline-block;
+	text-align: center;
+	bottom: 20px;
+	width: 60px;
+	right: 50px;
+
+}
+
+.go-fast{
+
+	position: relative;
+	display: inline-block;
+	text-align: center;
+	bottom: 20px;
+	width: 60px;
+	right: 50px;
+
+}
+
+.run-duration{
+	
+	position: absolute;
+	right: 30px;
+	bottom: 200px;
+	list-style: none;
+	
+}
+
+.short-time{
+	
+	position: relative;
+	display: inline-block;
+	text-align: center;
+	width: 60px;
+	bottom: 20px;
+	right: 50px;
+	
+}
+
+.mid-time{
+	
+	position: relative;
+	display: inline-block;
+	text-align: center;
+	width: 60px;
+	bottom: 20px;
+	right: 50px;
+	
+	
+}
+
+.constant-run{
+	
+	position: relative;
+	display: inline-block;
+	text-align: center;
+	width: 60px;
+	bottom: 20px;
+	right: 50px;
+	
+}
+
