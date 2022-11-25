@@ -140,27 +140,27 @@ function keypressed (event) {
 	
 	<div class = "camPanel">
 		
-		<button type="button" class="pan-left cam-buttons" name="panlt" id="panlt" />
+		<button type="button" class="pan-left cam-buttons" name="panlt" id="panlt">
 		<input type="image" src="../static/1leftarrow.png"
 		id="imgpanlt" onclick="sendMotion ('panlt');"
 		onkeypress="keypressed (event);"/>
 		
-		<button type="button" class="pan-right cam-buttons" name="panrt" id="panrt" />
+		<button type="button" class="pan-right cam-buttons" name="panrt" id="panrt">
 		<input type="image" src="../static/1rightarrow.png"
 		id="imgpanrt" onclick="sendMotion ('panrt');"/>
          
         
-        <button type="button" class="pan-home cam-buttons" name="homecam" id="homecam" />Home
+        <button type="button" class="pan-home cam-buttons" name="homecam" id="homecam">Home
         <input type="image" src="../static/gohome.png"
         id="imghome" onclick="sendMotion ('home');"/>
          
         
-        <button class="pan-left-full cam-buttons" name="panfull_lt" id="panfull_lt" />
+        <button class="pan-left-full cam-buttons" name="panfull_lt" id="panfull_lt">
         <input type="image" src="../static/arrow-left-double.png"
         id="imgpanall_lt" onclick="sendMotion ('panfull_lt');"
         onkeypress="keypressed (event);"/>
 		
-        <button class="pan-right-full cam-buttons" name="panfull_rt" id="panfull_rt" />
+        <button class="pan-right-full cam-buttons" name="panfull_rt" id="panfull_rt" >
         <input type="image" src="../static/arrow-right-double.png"
         id="imgpanall_rt" onclick="sendMotion ('panfull_rt');"/>
 	</div>
