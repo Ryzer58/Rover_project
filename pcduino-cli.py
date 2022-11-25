@@ -17,7 +17,7 @@ import tty
 import termios
 import board
 import digitalio
-from pcduino import pwmSet #currently used for PWM output
+from pcduino import pwmSet # currently used for PWM output
 from adafruit_servokit import ServoKit
 
 #Motor 1 configuration - Match with the jumper set on dir A header, to control motor direction
@@ -26,7 +26,7 @@ dir_1 = digitalio.DigitalInOut(board.D4)
 #dir_1 = digitalio.DigitalInOut(board.D7)
 dir_1.direction = digitalio.Direction.OUTPUT
 
-Throttle_1 = "pwm0" #Pcduino hardware PWM channel (pin D5). 
+Throttle_1 = "pwm0" # Pcduino hardware PWM channel (pin D5). 
 speed = 60
 
 #Motor 2 configuration - Match with the jumper set on dir B header, to control motor direction
@@ -35,10 +35,11 @@ speed = 60
 #dir_2 = digitalio.DigitalInOut(board.D13)
 #dir_2.direction = digitalio.Direction.OUTPUT
 
-#Throttle_2 = "pwm1" # PWM1 is located on D6, therefore a jumper wire to the PWMB header will
-#be needed to use this channel as well.
+# Throttle_2 = "pwm1" # Pcduino pin D6, On the velleman motor shield this brought out next to D5 on the PWMA
+# header therefore a jumper wire will need to bridge from the D6 pin to the PWMB header to be able to us the
+# second motor channel on the pcduino
 
-#Servo positions
+# Servo positions
 centre = 30
 right = 60
 left = 0
@@ -47,15 +48,18 @@ pos = centre
 kit = ServoKit(channels=16) #setup steering servo
 kit.servo[0].angle = pos
 
-#configure lighting controls
+# configure lighting controls
 Hd_lamps = digitalio.DigitalInOut(board.D8)
 Hd_lamps.direction = digitalio.Direction.OUTPUT
-#Ind_Lft = (connect to 555 timer)
-#Ind_rt =
-#Rear =
+#Ind_Lft = digitalio.DigitalInOut(board.D9)
+#Ind_Lft.direction = digitalio.Direction.OUTPUT - To do, think of way to make blink
+#Ind_rt = digitalio.DigitalInOut(board.D10)
+#Ind_rt.direction = digitalio.Direction.OUTPUT
+#Rear = digitalio.DigitalInOut(board.D11)
+#Rear .direction = digitalio.Direction.OUTPUT
 
 
-pwmSet.pulseDuration(Throttle_1, 400) #Period value in nanoseconds
+pwmSet.pulseDuration(Throttle_1, 400) # Enter frequecency (smallest value is 200hz)
 pwmSet.pulseDuty(Throttle_1, 0) #start at a stationary position
 pwmSet.enable(Throttle_1, 1)
 
