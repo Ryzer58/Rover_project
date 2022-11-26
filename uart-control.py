@@ -160,39 +160,94 @@ def sensorReadOut():
     #Process the sensor data - currently just using a single sensor at the front and rear for now. Later expand to using
     #an array of 3 in the format left, centre, right. One array position at the front the other at the rear
     
-    dist_max = 200
+    dist_max = 200 #typical maximum of an ultrasonic sensor
     dist_min = 20
     #dist_turn = 80
     
     left,centre,right=recieve(3)
     
+    #start of by read the centre facing sensor
     if centre < dist_min:
-        #Stop if the minimum threshold limit is reached
-        stopped()
+        
+        if centre !=0: #New ping also registers distance out of range as being zero so account for this quirk
+            stopped()
 
-        #if right < dist_min or left <dist_min:
-        #Suggest turning in a free direction
-        #   if right < dist_min:
-            #suggest turning left
-            #if left < dist_min:
+        if right < dist_min:
 
-        #if right < dist_min and left < dist_min:
-            #stopped
+            if right != 0:
+                stopped() #TODO add proper avoidance handling
+
+                # Turn left by x% based on closeness of the object
+            
+        if left <dist_min:
+
+            if left != 0:
+                stopped()
+
     
     print("Sensors - Not yet supported")
 
 def batteryReadOut():
-    #Fetch the battery levels in format cell1, cell2, cell3
+    #Fetch the battery levels from the 3 cells of the 11.1 Lipo battery
     
+    #cell_critc = 330
+    #cell_Warn = 350
+    #cell_opt= 370
+
     #cell1,cell2,cell3=recieve(4)
+
+    #if cell1 < cell_opt:
+
+        #if cell1 <= cell_warn:
+
+            #print("Warn battery 1 Low")
+
+        #else:
+
+            #Print("Critcal, begin shutdown")
+            #shutdown()
+
+    #else:
+        #print("BAT 1 ok")
+
+    #if cell2 < cell_opt:
+
+        #if cell2 <= cell_warn:
+
+            #print("Warn battery 2 Low")
+
+        #else:
+
+            #Print("Critcal, begin shutdown")
+            #shutdown()
+
+    #else:
+        #print("BAT 2 ok")
+
+    #if cell3 < cell_opt:
+
+        #if cell3 <= cell_warn:
+
+            #print("Warn battery 3 Low")
+
+        #else:
+
+            #Print("Critcal, begin shutdown")
+            #shutdown()
+
+    #else:
+        #print("BAT 3 ok")
+
     print("Battery level not yet supported")
+
 
 
 
 myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
 print (myports)
 
-#Configure active serial port
+#Configure active serial port with whatever arduino type device is connected
+
 for port in myports:
     if '/dev/ttyACM0' in port:
         arduLink = '/dev/ttyACM0'
