@@ -1,27 +1,4 @@
-/*The Main detection mechanism is two ultrasonic sensors, one positoned at the the front and
-*the other at the rear. Later I plan to use two arrays of 3 sensors. One array postioned at the
-*front and the other at the back, to reduce, pin count the recieve pins will be multiplexed
-*reducing the pin count from 12 to 8.
-*
-*Complation currently fails need to fix error probably obvious
-*
-*/
-
-unsigned long pingTimer[SONAR_NUM]; // Holds the times when the next ping should happen
-unsigned int cm[SONAR_NUM];         // Where the ping distances are stored.
-uint8_t act_sensor = 0;             // Keeps track of which sensor is active.
-
-NewPing sonar[SONAR_NUM] = {       // Sensor object array.
-  NewPing(12, 8, MAX_DISTANCE),    //Front facing sensor
-  NewPing(6, 7,  MAX_DISTANCE)     //Rear facing sensor.
-//Potential pins to use later for additional modules
-//NewPing(11, 8, MAX_DISTANCE)     //Front right    
-//NewPing(10, 8, MAX_DISTANCE)     //Front left
-//NewPing(3, 7, MAX_DISTANCE)      //Rear right
-//NewPing(2, 7, MAX_DISTANCE)      //Rear left
-};                                  
-
-void intialise_sensors(){                 //Carried out during setup phase
+void intialise_sensors(){                 // Carried out during setup phase
   pingTimer[0] = millis() + 75;           // First ping starts at 75ms, gives time for the Arduino to chill before starting.
   for (uint8_t i = 1; i < SONAR_NUM; i++) // Set the starting time for each sensor.
     pingTimer[i] = pingTimer[i - 1] + PING_INTERVAL;
@@ -30,12 +7,9 @@ void intialise_sensors(){                 //Carried out during setup phase
 //-----------------------------------------------------------------------------------------------------------------------------
 
 int scanning(bool dir){
-
-  //unsigned long pingTimer[SONAR_NUM]; // Holds the times when the next ping should happen (not currently needed)
-  //for each sensor.
  
   uint8_t half_sen = SONAR_NUM / 2;
-  //uint8_t i = 0; //reserved for later when using 6 sensors
+  //uint8_t i = 0; // reserved for later when using 6 sensors
   unsigned int left_sen;
   unsigned int centre_sen;
   unsigned int right_sen;
@@ -58,7 +32,7 @@ int scanning(bool dir){
 
   centre_sen = cm[act_sensor];
   
-  Serial.print(left_sen); Serial.print(","); //Reserved for later expansion
+  Serial.print(left_sen); Serial.print(","); // Reserved for later expansion
   Serial.print(centre_sen);Serial.print(",");
   Serial.println(right_sen);
 
@@ -96,7 +70,6 @@ void clusterCycle() { // Sensor ping cycle complete, do something with the resul
   }
   Serial.println();
 }
- 8/
 */
 
-//TODO - Add in section for BNO055 9DOF module
+//TODO - BNO055 9DOF module data processing for advance decision 
