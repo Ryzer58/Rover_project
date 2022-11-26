@@ -14,7 +14,7 @@
  */
 
 #include <Servo.h>
-//#include <NewPing.h>
+#include <NewPing.h>
 //#include <Wire.h> //TODO BNO055
 
 
@@ -65,8 +65,6 @@ int cur_ang = CENTRE;    //Start at center point
  
 #define SONAR_NUM     2   // Number or sensors.
 #define MAX_DISTANCE 200  // Maximum distance (in cm) to ping.
-#define STOP_DISTANCE 10
-#define TURN_DISTANCE 40  //Distance at the which the rover will start to turn at (TODO)  
 #define PING_INTERVAL 35  // Milliseconds between sensor pings (29ms is about the min to 
 //avoid cross-sensor echo).
 
@@ -90,6 +88,9 @@ void setup() {
   //intialise_sensors(); //disabed - TODO
   
   Serial.begin(19200);
+  //while(!Serial){
+  //  //needed for leonardo or similiar  
+  //}
   Serial.print("Motor: ");
   Serial.print(MIN_REVERSE); Serial.print(","); //Send values to the pi so it is full aware of what it is
   Serial.print(MAX_REVERSE); Serial.print(",");//working with.
@@ -138,6 +139,7 @@ void loop() {
         else{
           
           halt(); //Stop the motors, either if intentional or if an invalid velocity is specified
+          motion = 0;
           bitClear(control, 7); //set motion bit to 0
           
 
@@ -160,7 +162,7 @@ void loop() {
       }
       
       transmit(control, motion, cur_ang);
-      //scanning();   //Currently disabled - TODO
+      scanning(dir);   //Currently only supports single sensor in either direction
       //batt_check(); //Currently disabled
     }
   }
