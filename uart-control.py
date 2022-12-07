@@ -14,6 +14,8 @@ import serial.tools.list_ports
 import sys
 import tty
 import termios
+import board
+import digitalio
 
 #Variables to store the control data feteched from the Arduino
 
@@ -40,6 +42,32 @@ speed = 0
 func = 0
 
 speedLock = 0
+
+lit_on = False
+
+#Light control does not have to be precise so this can simplely be toggled by the sbc with concern over the timing requirements
+#Remember pins will need to be assigned base on the sbc used
+
+#Pcduino pins:
+lamp1_pin = board.D8
+lamp2_pin = board.D9
+lamp3_pin = board.D10
+lamp4_pin = board.D11
+
+#PI pins
+#lamp1_pin = board.D17
+#lamp2_pin = board.D27
+#lamp3_pin = board.D22
+#lamp4_pin = board.D5
+
+fwd_lamp = digitalio.DigitalInOut(lamp1_pin)
+fwd_lamp.direction = digitalio.Direction.OUTPUT
+rt_lamp = digitalio.DigitalInOut(lamp2_pin)
+rt_lamp.direction = digitalio.Direction.OUTPUT
+lft_lamp = digitalio.DigitalInOut(lamp3_pin)
+lft_lamp.direction = digitalio.Direction.OUTPUT
+rev_lamp = digitalio.DigitalInOut(lamp4_pin)
+rev_lamp.direction = digitalio.Direction.OUTPUT
 
 def readchar():
     fd = sys.stdin.fileno()
@@ -290,6 +318,10 @@ try:
                    sleep(0.5)
             print('Forward: ' + str(speed))
             run_time = 3            #start a counter to allow run time before return speed to 0 (not yet implemented)
+            if lit_on == True:
+                if rev_lamp == True:
+                    rev_lamp = False
+                fwd_lamp.value = True
 
 
         elif keyp == 's' or ord(keyp) == 17:
@@ -298,6 +330,10 @@ try:
                      sleep(0.5)
               print('Reverse: ' + str(speed))
               run_time = 3
+              if lit_on == True:
+                if fwd_lamp.value == True:
+                    fwd_lamp.value = False
+                rev_lamp.value = True
 
         elif keyp == 'd' or ord(keyp) == 19:
               print('Right:', end=' ')
@@ -306,7 +342,10 @@ try:
                   print(str(pos))
               if pos == serRight:
                  print('at max')
-                 run_time = 1 #give servo time to reach position
+              run_time = 1 #give servo time to reach position
+              if lit_on == True:
+                lft_lamp.value = True
+            
 
         elif keyp == 'a' or ord(keyp) == 18:
               print('Left:', end=' ')
@@ -315,7 +354,9 @@ try:
                   print(str(pos))
               if pos == serLeft:
                   print('at max')
-                  run_time = 1
+              run_time = 1
+              if lit_on == True:
+                rt_lamp.value = True
 
         elif keyp == '.' or keyp == '>':
               print('Accelarating', end=' ')
@@ -354,11 +395,11 @@ try:
               preSpeed = speed
               speed = 0
               
-        elif keyp == 'l': #Only main working function is lighting
-            if func != 10:
-                func = 10
+        elif keyp == 'l': #Toggle lighting on and off
+            if lit_on == False:
+                lit_on = True
             else:
-                func = 0
+                lit_on = False
 
         PiCommand = [str(speed),str(pos),str(func)] #functions are work in progress so stub for now
         
