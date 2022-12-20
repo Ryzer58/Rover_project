@@ -69,6 +69,8 @@ lft_lamp.direction = digitalio.Direction.OUTPUT
 rev_lamp = digitalio.DigitalInOut(lamp4_pin)
 rev_lamp.direction = digitalio.Direction.OUTPUT
 
+
+
 def readchar():
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
@@ -125,6 +127,42 @@ def recieve(process):
     return recieveData    
 
 
+myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
+print (myports)
+
+#Configure active serial port with whatever arduino type device is connected
+
+for port in myports:
+    if '/dev/ttyACM0' in port:
+        arduLink = '/dev/ttyACM0'
+        print("ACM device found - Most likely Arduino UNO")
+    elif '/dev/ttyUSB0' in port:
+        arduLink = '/dev/ttyUSB0'
+        print("USB device found - Most likely Nano/clone")
+
+        
+piComm = serial.Serial(arduLink,19200,timeout = 2)
+piComm.flush()
+
+
+#Fetch the motor operating parameters and store them to the array
+motData = recieve(0)
+print("Motor Configuration: ")
+for m in range(len(motData)):
+    motParam[m] = int(motData[m])
+    print(motLabel[m] + str(motData[m]))
+
+
+#Fetch the Servo operating parameters and store them to the array
+servoData = recieve(1)
+print("Servo configuaration: ")
+for s in range(len(servoData)):
+    servoParam[s] = int(servoData[s])
+    print(servoLabel[s] + str(servoData[s]))
+    
+revMin, revMax, forMin, forMax = [motParam[i] for i in [0 , 1, 2, 3]]
+serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
+
 def returnedInput():
     exp_angle = pos
     exp_motion = 0
@@ -135,7 +173,8 @@ def returnedInput():
     #Compare the infomation we just sent against what is return to ensure there are no errors
     control,motion,angle=recieve(2)
 
-    
+    control = int(control)
+
     #first check the control, which is configure in bits to see roughly if the rover is 
     # behaving as expected.
 
@@ -157,7 +196,7 @@ def returnedInput():
     #See if we are turn and which way we are turning
     steer_check = control & set_turn
 
-    if steer_check != 30 and exp_angle == serCentre:
+    if steer_check > 16 and exp_angle == serCentre:
         print("Error - steering not Centred")
 
     elif steer_check == set_turn and exp_angle < serCentre:
@@ -193,27 +232,32 @@ def sensorReadOut():
     #dist_turn = 80
     
     left,centre,right=recieve(3)
+
+    centre = int(centre)
+    right = int(right)
+    left = int(left)
     
     #start of by read the centre facing sensor
-    if centre < dist_min:
+    if centre < dist_min & centre != 0:
         
-        if centre !=0: #New ping also registers distance out of range as being zero so account for this quirk
-            stopped()
+        c_value = str(centre)
+        print("Sensors - object found within " + c_value + "cm, stopping")
+        stopped()
 
-        if right < dist_min:
+        #if right < dist_min:
 
-            if right != 0:
-                stopped() #TODO add proper avoidance handling
+        #   if right != 0:
+        #       stopped() #TODO add proper avoidance handling
 
-                # Turn left by x% based on closeness of the object
+        # Turn left by x% based on closeness of the object
             
-        if left <dist_min:
+        #if left <dist_min:
 
-            if left != 0:
-                stopped()
+        #   if left != 0:
+        #      stopped()
 
     
-    print("Sensors - Not yet supported")
+    print("Sensors - Not obstacles found")
 
 def batteryReadOut():
     #Fetch the battery levels from the 3 cells of the 11.1 Lipo battery
@@ -268,44 +312,6 @@ def batteryReadOut():
 
     print("Battery level not yet supported")
 
-
-
-
-myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
-print (myports)
-
-#Configure active serial port with whatever arduino type device is connected
-
-for port in myports:
-    if '/dev/ttyACM0' in port:
-        arduLink = '/dev/ttyACM0'
-        print("ACM device found - Most likely Arduino UNO")
-    elif '/dev/ttyUSB0' in port:
-        arduLink = '/dev/ttyUSB0'
-        print("USB device found - Most likely Nano/clone")
-
-        
-piComm = serial.Serial(arduLink,19200,timeout = 2)
-piComm.flush()
-
-
-#Fetch the motor operating parameters and store them to the array
-motData = recieve(0)
-print("Motor Configuration: ")
-for m in range(len(motData)):
-    motParam[m] = int(motData[m])
-    print(motLabel[m] + str(motData[m]))
-
-
-#Fetch the Servo operating parameters and store them to the array
-servoData = recieve(1)
-print("Servo configuaration: ")
-for s in range(len(servoData)):
-    servoParam[s] = int(servoData[s])
-    print(servoLabel[s] + str(servoData[s]))
-    
-revMin, revMax, forMin, forMax = [motParam[i] for i in [0 , 1, 2, 3]]
-serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
 
 
 try:
