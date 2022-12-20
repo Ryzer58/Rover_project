@@ -69,20 +69,6 @@ int cur_ang = CENTRE;    //Start at center point
 #define PING_INTERVAL 35  // Milliseconds between sensor pings (29ms is about the min to 
 //avoid cross-sensor echo).
 
-unsigned long pingTimer[SONAR_NUM]; // Holds the times when the next ping should happen
-unsigned int cm[SONAR_NUM];         // Where the ping distances are stored.
-uint8_t act_sensor = 0;             // Keeps track of which sensor is active.
-
-NewPing sonar[SONAR_NUM] = {       // Sensor object array.
-  NewPing(12, 8, MAX_DISTANCE),    //Front facing sensor
-  NewPing(6, 7,  MAX_DISTANCE)     //Rear facing sensor.
-//Potential pins to use later for additional modules
-//NewPing(11, 8, MAX_DISTANCE)     //Front right    
-//NewPing(10, 8, MAX_DISTANCE)     //Front left
-//NewPing(3, 7, MAX_DISTANCE)      //Rear right
-//NewPing(2, 7, MAX_DISTANCE)      //Rear left
-};
-
 
 /*------------------------------------------------------------------------------------------
  * BNO055 configuration - TODO
@@ -167,7 +153,7 @@ void loop() {
       
         if (in_ang <= MAX_RIGHT and in_ang >= MAX_LEFT){
           cur_ang = update_steering(in_ang);
-          bitSet(control, 5); // 00100000 - set turning bit to 1
+          
         }
         
         else{
@@ -211,11 +197,13 @@ int update_velocity(bool dir, int accel){
 int update_steering(int pos){ 
 
   if (pos <= MAX_RIGHT and pos > CENTRE){
-        
+
+    bitSet(control, 5); // 00100000 - set turning bit to 1   
     bitSet(control, 4); // 00110000 (48) - Angle bit = 1
   }
   else if (pos >= MAX_LEFT and pos < CENTRE){
         
+    bitSet(control, 5); // 00100000 - set turning bit to 1
     bitClear(control, 4); // 00100000 (32) - Angle bit = 0   
   }
   else{

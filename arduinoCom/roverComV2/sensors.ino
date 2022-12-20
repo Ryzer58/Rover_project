@@ -1,3 +1,18 @@
+
+unsigned long pingTimer[SONAR_NUM]; // Holds the times when the next ping should happen
+unsigned int cm[SONAR_NUM];         // Where the ping distances are stored.
+uint8_t act_sensor = 0;             // Keeps track of which sensor is active.
+
+NewPing sonar[SONAR_NUM] = {       // Sensor object array.
+  NewPing(12, 12, MAX_DISTANCE),    //Front facing sensor
+  NewPing(7, 7,  MAX_DISTANCE)     //Rear facing sensor.
+//Potential pins to use later for additional modules
+//NewPing(11, 11, MAX_DISTANCE)     //Front right    
+//NewPing(10, 11, MAX_DISTANCE)     //Front left
+//NewPing(8, 8, MAX_DISTANCE)      //Rear right
+//NewPing(6, 6, MAX_DISTANCE)      //Rear left
+};
+
 void intialise_sensors(){                 // Carried out during setup phase
   pingTimer[0] = millis() + 75;           // First ping starts at 75ms, gives time for the Arduino to chill before starting.
   for (uint8_t i = 1; i < SONAR_NUM; i++) // Set the starting time for each sensor.
