@@ -1,0 +1,5 @@
+.vscode
+.env
+Rover_model.lnk
+tests
+uart-control.py.bak
