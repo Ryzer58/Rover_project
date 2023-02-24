@@ -57,17 +57,18 @@ int cur_ang = CENTRE;    //Start at center point
 
 
 /*------------------------------------------------------------------------------------------
- * HC-SR04 - Ultrasonic sensor configuration - Current our main means of exploring
+ * HC-SR04 - Ultrasonic sensor configuration - To use will carry out inital tests while
+ * indoors. See sensors tab for more detailed configuration.
  * surrounding environment. The end goal is to use 6 sensor, an array of 3 forward and back
  * At this point we are just testing with a single sensor mounted front and rear.
  * 
  * 
  */
  
-#define SONAR_NUM     2   // Number or sensors.
+#define SONAR_NUM     3   // Number or sensors.
 #define MAX_DISTANCE 200  // Maximum distance (in cm) to ping.
-#define PING_INTERVAL 35  // Milliseconds between sensor pings (29ms is about the min to 
-//avoid cross-sensor echo).
+#define MIN_UPPER 5       //Define a band at which to stop
+#define MIN_LOWER 2
 
 
 /*------------------------------------------------------------------------------------------
@@ -147,6 +148,8 @@ void loop() {
 
         } 
         vel = in_vel;
+
+        act_sensor = 0;
       }
       
       if (in_ang != cur_ang){
@@ -160,7 +163,9 @@ void loop() {
           
           bitClear(control, 5); // set turning bit bit to 0
           str.write(CENTRE);    // if an invalid value is sent then default back to center          
-        }  
+        }
+
+        act_sensor = 0;  
       }
       
       transmit(control, motion, cur_ang);
@@ -217,7 +222,7 @@ int update_steering(int pos){
   
 }
 
-void transmit(byte results, int throttle, int pos){
+void transmit(byte results, int throttle, int pos){ //TODO rework serial communications to make them more streamlined/efficient
 
   Serial.print(results); Serial.print(",");
   Serial.print(throttle);Serial.print(",");
