@@ -5,10 +5,10 @@
 unsigned long last_ping;
 unsigned long time_since;
 unsigned long ping_time = 50;         //Minimum interval between pings to account for cross echo
-//unsigned long last_scan;            //Used in test program to moderate the sampling time to 500 ms
-//unsigned long check_time;
-//unsigned long scan_now = 500;
-uint8_t act_sensor = 0;               // Keeps track of which sensor is active.
+unsigned long last_scan;            //Used in test program to moderate the sampling time to 500 ms
+unsigned long check_time;
+unsigned long scan_now = 500;
+
 uint8_t array_pos[3]={};
 
 bool colAlert;
@@ -54,41 +54,37 @@ int scanning(bool dir){
 
         
 
-        if(array_pos[act_sensor] <= MIN_UPPER and array_pos[act_sensor] >= MIN_LOWER){
+        /* if(array_pos[act_sensor] <= MIN_UPPER and array_pos[act_sensor] >= MIN_LOWER){
+         *
+         *
+         *   colAlert = true; //Doesnt currently do anything but the plan is that this acts as a fail safe
+         *                //should the SBC stop fail to send the stop command
+         * 
+         *}
+         */
 
-          colAlert = true; //Doesnt currently do anything but the plan is that this acts as a fail safe
-                           //should the SBC stop fail to send the stop command
-
-        }
-
-        else if (array_pos[act_sensor] == 0){
+        if (array_pos[act_sensor] == 0){
 
           out_range = true;
-        }
-
-        Serial.print(array_pos[act_sensor]);
-
-        if(act_sensor < 2){
-
-          Serial.print(",");
+          array_pos[act_sensor] = MAX_DISTANCE;
 
         }
 
-        if(act_sensor == 2){
+        else{
 
-          Serial.println(";");
-          
-        }
+          out_range = false;
+
+        }  
 
         act_sensor++;
 
         last_ping = time_since;
-
       }
 
     }
- 
+
   }
+ 
 
   else{ //Switch to the rear facing ultrasonic array
 
@@ -100,32 +96,25 @@ int scanning(bool dir){
 
         array_pos[act_sensor] = rear_array[act_sensor].ping_cm();
 
-        Serial.print(array_pos[act_sensor]);
+        /* if(array_pos[act_sensor] <= MIN_UPPER and array_pos[act_sensor] >= MIN_LOWER){
+         *
+         *  colAlert = true;
+         *  
+         *}
+         */
 
-        if(array_pos[act_sensor] <= MIN_UPPER and array_pos[act_sensor] >= MIN_LOWER){
-
-          colAlert = true;
-          
-        }
-
-        else if (array_pos[act_sensor] == 0){
+        if (array_pos[act_sensor] == 0){
 
           out_range = true;
-        }
-
-        Serial.print(array_pos[act_sensor]);
-
-        if(act_sensor < 2){
-
-          Serial.print(",");
+          array_pos[act_sensor] = MAX_DISTANCE;
 
         }
 
-        if(act_sensor == 2){
+        else{
 
-          Serial.println(";");
-          
-        }
+          out_range = false;
+
+        }  
 
         act_sensor++;
 
@@ -136,6 +125,17 @@ int scanning(bool dir){
 
     }
         
+  }
+
+  check_time = millis();
+
+  if(check_time - last_scan >= scan_now)
+  {
+
+    transmit(array_pos[0], array_pos[1], array_pos[2]);
+
+    last_scan = check_time;
+
   }
 
 }

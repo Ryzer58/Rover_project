@@ -17,7 +17,7 @@
 //#include <Wire.h> //TODO BNO055
 
 
-byte control = 0;
+uint8_t control = 0;
 
 /* Vellemen KA04 motor shield configuration - A stackable dual motor shield. It requires two pins 
  * to drive a single motor, one for direction and the other for PWM output. Their are
@@ -38,7 +38,7 @@ byte control = 0;
 #define MAX_FORWARD 370  // position in the the range of 75 - 255
 #define STATIONARY 0
 
-int vel;
+uint8_t vel;
 
 
 /*------------------------------------------------------------------------------------------
@@ -60,7 +60,7 @@ int cur_ang = CENTRE;    //Start at center point
  * HC-SR04 - Ultrasonic sensor configuration - To use will carry out inital tests while
  * indoors. See sensors tab for more detailed configuration.
  * surrounding environment. The end goal is to use 6 sensor, an array of 3 forward and back
- * At this point we are just testing with a single sensor mounted front and rear.
+ * 
  * 
  * 
  */
@@ -69,6 +69,7 @@ int cur_ang = CENTRE;    //Start at center point
 #define MAX_DISTANCE 200  // Maximum distance (in cm) to ping.
 #define MIN_UPPER 5       //Define a band at which to stop
 #define MIN_LOWER 2
+uint8_t act_sensor = 0;               // Keeps track of which sensor is active.
 
 
 /*------------------------------------------------------------------------------------------
@@ -119,7 +120,7 @@ void loop() {
     // look for the newline. That's the end of your sentence:
     if (Serial.read() == '\n') {
       
-      int motion;
+      uint8_t motion = 0;
       bool dir;
       
       if (in_vel != vel){ // Only attempt to write out a value if there is a change
@@ -169,16 +170,19 @@ void loop() {
       }
       
       transmit(control, motion, cur_ang);
-      scanning(dir);  // Currently only supports single sensor in either direction
-      //batt_check(); // Currently disabled
+      
     }
   }
+
+  scanning(dir);  // Currently only supports single sensor in either direction
+  //batt_check(); // Currently disabled
+  
 }
 
 int update_velocity(bool dir, int accel){
-  const int throt_min = 75; // Minimum pwm value at which the motor will still crawl at
-  const int throt_max = 255;
-  int throttle;
+  const uint8_t throt_min = 75; // Minimum pwm value at which the motor will still crawl at
+  const uint8_t throt_max = 255;
+  uint8_t throttle;
   
   if (dir == true){
     throttle = map(accel, MIN_FORWARD, MAX_FORWARD, throt_min, throt_max);
@@ -199,7 +203,7 @@ int update_velocity(bool dir, int accel){
   return throttle;
 }
 
-int update_steering(int pos){ 
+int update_steering(uint8_t pos){ 
 
   if (pos <= MAX_RIGHT and pos > CENTRE){
 
@@ -222,7 +226,7 @@ int update_steering(int pos){
   
 }
 
-void transmit(byte results, int throttle, int pos){ //TODO rework serial communications to make them more streamlined/efficient
+void transmit(uint8_t results, uint8_t throttle, int8_t pos){ //TODO rework serial communications to make them more streamlined/efficient
 
   Serial.print(results); Serial.print(",");
   Serial.print(throttle);Serial.print(",");
