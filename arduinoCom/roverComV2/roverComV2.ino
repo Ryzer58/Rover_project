@@ -39,6 +39,8 @@ uint8_t control = 0;
 #define STATIONARY 0
 
 uint8_t vel;
+bool dir;
+bool new_data;
 
 
 /*------------------------------------------------------------------------------------------
@@ -52,7 +54,7 @@ Servo str;               //Main steering servo,
 #define CENTRE 30
 #define MAX_LEFT 0       //Left and Right may need to swapped based on the orientation
 #define MAX_RIGHT 60     //of the servo
-int cur_ang = CENTRE;    //Start at center point
+uint8_t cur_ang = CENTRE;    //Start at center point
 #define pivot_time = 12; //Time taken for servo to do a an arc of 60 degrees in nanoseconds
 
 
@@ -113,29 +115,28 @@ void loop() {
   while(Serial.available() > 0){
     
     //sent in format: in_velocity, inAng, inFunc
-    int in_vel = Serial.parseInt();  // Input velocity, combining speed and direction as in the variables defined above
-    int in_ang = Serial.parseInt();  // Input angle for the steering servo
-    int in_func = Serial.parseInt(); // Reserved for later use
+    uint8_t in_vel = Serial.parseInt();  // Input velocity, combining speed and direction as in the variables defined above
+    uint8_t in_ang = Serial.parseInt();  // Input angle for the steering servo
+    uint8_t in_func = Serial.parseInt(); // Reserved for later use
 
     // look for the newline. That's the end of your sentence:
     if (Serial.read() == '\n') {
       
       uint8_t motion = 0;
-      bool dir;
       
       if (in_vel != vel){ // Only attempt to write out a value if there is a change
       
         if (in_vel >= MIN_FORWARD and in_vel <= MAX_FORWARD){
            
           dir = true;
-          motion = update_velocity(dir, in_vel);
+          motion = update_velocity(in_vel);
           bitSet(control, 6); // 1100 0000 (192) - set motion and direction bit to 1
           bitSet(control, 7);
         }
         else if (in_vel >= MIN_REVERSE and in_vel <= MAX_REVERSE){
           
           dir = false;
-          motion = update_velocity(dir, in_vel);
+          motion = update_velocity(in_vel);
           bitClear(control, 6); // 1000 0000 (128) set motion to 1 and drive to 0
           bitSet(control, 7);
         }
@@ -151,6 +152,9 @@ void loop() {
         vel = in_vel;
 
         act_sensor = 0;
+
+        new_data = true;
+
       }
       
       if (in_ang != cur_ang){
@@ -166,7 +170,9 @@ void loop() {
           str.write(CENTRE);    // if an invalid value is sent then default back to center          
         }
 
-        act_sensor = 0;  
+        act_sensor = 0;
+
+        new_data = true;  
       }
       
       transmit(control, motion, cur_ang);
@@ -174,12 +180,12 @@ void loop() {
     }
   }
 
-  scanning(dir);  // Currently only supports single sensor in either direction
+  scanning();  // Currently only supports single sensor in either direction
   //batt_check(); // Currently disabled
-  
+
 }
 
-int update_velocity(bool dir, int accel){
+int update_velocity(int accel){
   const uint8_t throt_min = 75; // Minimum pwm value at which the motor will still crawl at
   const uint8_t throt_max = 255;
   uint8_t throttle;
@@ -226,7 +232,7 @@ int update_steering(uint8_t pos){
   
 }
 
-void transmit(uint8_t results, uint8_t throttle, int8_t pos){ //TODO rework serial communications to make them more streamlined/efficient
+void transmit(uint8_t results, uint8_t throttle, uint8_t pos){ //TODO rework serial communications to make them more streamlined/efficient
 
   Serial.print(results); Serial.print(",");
   Serial.print(throttle);Serial.print(",");

@@ -40,7 +40,7 @@ NewPing rear_array[SONAR_NUM] = {     //Rear facing sensors
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-int scanning(bool dir){
+void scanning(){
  
   if (dir == true){ //Use forward facing sonar(s)
 
@@ -132,7 +132,12 @@ int scanning(bool dir){
   if(check_time - last_scan >= scan_now)
   {
 
-    transmit(array_pos[0], array_pos[1], array_pos[2]);
+    if(new_data){
+
+      transmit(array_pos[0], array_pos[1], array_pos[2]);
+      new_data = false;
+
+    }
 
     last_scan = check_time;
 
@@ -140,4 +145,9 @@ int scanning(bool dir){
 
 }
 
-//TODO - BNO055 9DOF module data processing for advance decision 
+//TODO - BNO055 9DOF module data processing for advance decision
+/**
+ * @brief Two options of encoder or bno055 to calculate speed
+ * 
+ */
+
