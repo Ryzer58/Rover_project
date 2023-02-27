@@ -17,7 +17,7 @@
 //#include <Wire.h> //TODO BNO055
 
 
-byte control = 0;
+uint8_t control = 0;
 
 /* Vellemen KA04 motor shield configuration - A stackable dual motor shield. It requires two pins 
  * to drive a single motor, one for direction and the other for PWM output. Their are
@@ -38,7 +38,9 @@ byte control = 0;
 #define MAX_FORWARD 370  // position in the the range of 75 - 255
 #define STATIONARY 0
 
-int vel;
+uint8_t vel;
+bool dir;
+bool new_data;
 
 
 /*------------------------------------------------------------------------------------------
@@ -52,22 +54,24 @@ Servo str;               //Main steering servo,
 #define CENTRE 30
 #define MAX_LEFT 0       //Left and Right may need to swapped based on the orientation
 #define MAX_RIGHT 60     //of the servo
-int cur_ang = CENTRE;    //Start at center point
+uint8_t cur_ang = CENTRE;    //Start at center point
 #define pivot_time = 12; //Time taken for servo to do a an arc of 60 degrees in nanoseconds
 
 
 /*------------------------------------------------------------------------------------------
- * HC-SR04 - Ultrasonic sensor configuration - Current our main means of exploring
+ * HC-SR04 - Ultrasonic sensor configuration - To use will carry out inital tests while
+ * indoors. See sensors tab for more detailed configuration.
  * surrounding environment. The end goal is to use 6 sensor, an array of 3 forward and back
- * At this point we are just testing with a single sensor mounted front and rear.
+ * 
  * 
  * 
  */
  
-#define SONAR_NUM     2   // Number or sensors.
+#define SONAR_NUM     3   // Number or sensors.
 #define MAX_DISTANCE 200  // Maximum distance (in cm) to ping.
-#define PING_INTERVAL 35  // Milliseconds between sensor pings (29ms is about the min to 
-//avoid cross-sensor echo).
+#define MIN_UPPER 5       //Define a band at which to stop
+#define MIN_LOWER 2
+uint8_t act_sensor = 0;               // Keeps track of which sensor is active.
 
 
 /*------------------------------------------------------------------------------------------
@@ -111,29 +115,28 @@ void loop() {
   while(Serial.available() > 0){
     
     //sent in format: in_velocity, inAng, inFunc
-    int in_vel = Serial.parseInt();  // Input velocity, combining speed and direction as in the variables defined above
-    int in_ang = Serial.parseInt();  // Input angle for the steering servo
-    int in_func = Serial.parseInt(); // Reserved for later use
+    uint8_t in_vel = Serial.parseInt();  // Input velocity, combining speed and direction as in the variables defined above
+    uint8_t in_ang = Serial.parseInt();  // Input angle for the steering servo
+    uint8_t in_func = Serial.parseInt(); // Reserved for later use
 
     // look for the newline. That's the end of your sentence:
     if (Serial.read() == '\n') {
       
-      int motion;
-      bool dir;
+      uint8_t motion = 0;
       
       if (in_vel != vel){ // Only attempt to write out a value if there is a change
       
         if (in_vel >= MIN_FORWARD and in_vel <= MAX_FORWARD){
            
           dir = true;
-          motion = update_velocity(dir, in_vel);
+          motion = update_velocity(in_vel);
           bitSet(control, 6); // 1100 0000 (192) - set motion and direction bit to 1
           bitSet(control, 7);
         }
         else if (in_vel >= MIN_REVERSE and in_vel <= MAX_REVERSE){
           
           dir = false;
-          motion = update_velocity(dir, in_vel);
+          motion = update_velocity(in_vel);
           bitClear(control, 6); // 1000 0000 (128) set motion to 1 and drive to 0
           bitSet(control, 7);
         }
@@ -147,6 +150,11 @@ void loop() {
 
         } 
         vel = in_vel;
+
+        act_sensor = 0;
+
+        new_data = true;
+
       }
       
       if (in_ang != cur_ang){
@@ -160,20 +168,27 @@ void loop() {
           
           bitClear(control, 5); // set turning bit bit to 0
           str.write(CENTRE);    // if an invalid value is sent then default back to center          
-        }  
+        }
+
+        act_sensor = 0;
+
+        new_data = true;  
       }
       
       transmit(control, motion, cur_ang);
-      scanning(dir);  // Currently only supports single sensor in either direction
-      //batt_check(); // Currently disabled
+      
     }
   }
+
+  scanning();  // Currently only supports single sensor in either direction
+  //batt_check(); // Currently disabled
+
 }
 
-int update_velocity(bool dir, int accel){
-  const int throt_min = 75; // Minimum pwm value at which the motor will still crawl at
-  const int throt_max = 255;
-  int throttle;
+int update_velocity(int accel){
+  const uint8_t throt_min = 75; // Minimum pwm value at which the motor will still crawl at
+  const uint8_t throt_max = 255;
+  uint8_t throttle;
   
   if (dir == true){
     throttle = map(accel, MIN_FORWARD, MAX_FORWARD, throt_min, throt_max);
@@ -194,7 +209,7 @@ int update_velocity(bool dir, int accel){
   return throttle;
 }
 
-int update_steering(int pos){ 
+int update_steering(uint8_t pos){ 
 
   if (pos <= MAX_RIGHT and pos > CENTRE){
 
@@ -217,7 +232,7 @@ int update_steering(int pos){
   
 }
 
-void transmit(byte results, int throttle, int pos){
+void transmit(uint8_t results, uint8_t throttle, uint8_t pos){ //TODO rework serial communications to make them more streamlined/efficient
 
   Serial.print(results); Serial.print(",");
   Serial.print(throttle);Serial.print(",");

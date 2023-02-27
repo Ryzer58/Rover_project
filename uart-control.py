@@ -49,16 +49,16 @@ lit_on = False
 #Remember pins will need to be assigned base on the sbc used
 
 #Pcduino pins:
-lamp1_pin = board.D8
-lamp2_pin = board.D9
-lamp3_pin = board.D10
-lamp4_pin = board.D11
+#lamp1_pin = board.D8
+#lamp2_pin = board.D9
+#lamp3_pin = board.D10
+#lamp4_pin = board.D11
 
 #PI pins
-#lamp1_pin = board.D17
-#lamp2_pin = board.D27
-#lamp3_pin = board.D22
-#lamp4_pin = board.D5
+lamp1_pin = board.D17
+lamp2_pin = board.D27
+lamp3_pin = board.D22
+lamp4_pin = board.D5
 
 fwd_lamp = digitalio.DigitalInOut(lamp1_pin)
 fwd_lamp.direction = digitalio.Direction.OUTPUT
@@ -115,15 +115,9 @@ def transmit():
 
 def recieve(process):
 
-    if process == 0:
-        motor = piComm.readline().decode('utf-8').lstrip('Motor: ') #filter out debug label to return only configuration values
+    #Reverted back to simple format, ideally this will need to streamed to process slightly different sets of data
+    recieveData = piComm.readline().decode('utf-8')
 
-    if process == 1:
-        servo = piComm.readline().decode('utf-8').lstrip('Servo: ')
-
-    else:
-        toRecieve = piComm.readline().decode('utf-8').rstrip()
-    recieveData = toRecieve.split(",")
     return recieveData    
 
 
@@ -146,7 +140,9 @@ piComm.flush()
 
 
 #Fetch the motor operating parameters and store them to the array
-motData = recieve(0)
+motData = recieve()
+motData = motData.lstrip('Motor: ')
+motData = motData.split(",")
 print("Motor Configuration: ")
 for m in range(len(motData)):
     motParam[m] = int(motData[m])
@@ -154,7 +150,10 @@ for m in range(len(motData)):
 
 
 #Fetch the Servo operating parameters and store them to the array
-servoData = recieve(1)
+servoData = recieve()
+servoData = servoData.lstrip('Servo: ')
+servoData = servoData.split(",")
+
 print("Servo configuaration: ")
 for s in range(len(servoData)):
     servoParam[s] = int(servoData[s])
@@ -163,7 +162,7 @@ for s in range(len(servoData)):
 revMin, revMax, forMin, forMax = [motParam[i] for i in [0 , 1, 2, 3]]
 serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
 
-def returnedInput():
+def coreData():
     exp_angle = pos
     exp_motion = 0
 
@@ -174,6 +173,8 @@ def returnedInput():
     control,motion,angle=recieve(2)
 
     control = int(control)
+    motion = int(motion)
+    angle = int(angle)
 
     #first check the control, which is configure in bits to see roughly if the rover is 
     # behaving as expected.
@@ -213,12 +214,15 @@ def returnedInput():
     elif speed >= 190:
        exp_motion = speed - fwd_offset
 
-    if exp_motion!=int(motion):
+    else:
+        exp_motion = 0
+
+    if exp_motion != motion:
        print("Error - speed does not match expected value")
        print(motion)
 
     #Finally check the angle against the expected one
-    if exp_angle!=int(angle):
+    if exp_angle != angle:
        print("Error - angle does not match expected position")
        print(angle)
 
@@ -244,22 +248,26 @@ def sensorReadOut():
         print("Sensors - object found within " + c_value + "cm, stopping")
         stopped()
 
-        #if right < dist_min:
+        if right < dist_min:
+
+            print("Suggest turn left")
 
         #   if right != 0:
         #       stopped() #TODO add proper avoidance handling
 
         # Turn left by x% based on closeness of the object
             
-        #if left <dist_min:
+        if left <dist_min:
+
+            print("Suggest turn right")
 
         #   if left != 0:
         #      stopped()
 
-    
-    print("Sensors - Not obstacles found")
+    else:
+        print("Sensors - Not obstacles found")
 
-def batteryReadOut():
+#def batteryReadOut():
     #Fetch the battery levels from the 3 cells of the 11.1 Lipo battery
     
     #cell_critc = 330
@@ -310,7 +318,7 @@ def batteryReadOut():
     #else:
         #print("BAT 3 ok")
 
-    print("Battery level not yet supported")
+    #print("Battery level not yet supported")
 
 
 
@@ -410,10 +418,9 @@ try:
         PiCommand = [str(speed),str(pos),str(func)] #functions are work in progress so stub for now
         
         transmit()
-        
-        returnedInput()
+        coreData()
         sensorReadOut()
-        batteryReadOut()
+        #batteryReadOut()
         sleep(0.2)
        
 

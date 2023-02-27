@@ -1,90 +1,153 @@
 
-unsigned long pingTimer[SONAR_NUM]; // Holds the times when the next ping should happen
-unsigned int cm[SONAR_NUM];         // Where the ping distances are stored.
-uint8_t act_sensor = 0;             // Keeps track of which sensor is active.
+//unsigned long pingTimer[SONAR_NUM]; // Holds the times when the next ping should happen
+//unsigned int cm[SONAR_NUM];         // Where the ping distances are stored.
 
-NewPing sonar[SONAR_NUM] = {       // Sensor object array.
-  NewPing(12, 12, MAX_DISTANCE),    //Front facing sensor
-  NewPing(7, 7,  MAX_DISTANCE)     //Rear facing sensor.
-//Potential pins to use later for additional modules
-//NewPing(11, 11, MAX_DISTANCE)     //Front right    
-//NewPing(10, 11, MAX_DISTANCE)     //Front left
-//NewPing(8, 8, MAX_DISTANCE)      //Rear right
-//NewPing(6, 6, MAX_DISTANCE)      //Rear left
+unsigned long last_ping;
+unsigned long time_since;
+unsigned long ping_time = 50;         //Minimum interval between pings to account for cross echo
+unsigned long last_scan;            //Used in test program to moderate the sampling time to 500 ms
+unsigned long check_time;
+unsigned long scan_now = 500;
+
+uint8_t array_pos[3]={};
+
+bool colAlert;
+bool out_range;
+
+NewPing for_array[SONAR_NUM] = {      // Front facing sensors.
+  NewPing(12, 12, MAX_DISTANCE),      // Right
+  NewPing(10, 10, MAX_DISTANCE),      // Centre
+  NewPing(8, 8, MAX_DISTANCE),         // Left
 };
 
-void intialise_sensors(){                 // Carried out during setup phase
-  pingTimer[0] = millis() + 75;           // First ping starts at 75ms, gives time for the Arduino to chill before starting.
-  for (uint8_t i = 1; i < SONAR_NUM; i++) // Set the starting time for each sensor.
-    pingTimer[i] = pingTimer[i - 1] + PING_INTERVAL;
-}
+NewPing rear_array[SONAR_NUM] = {     //Rear facing sensors
+  NewPing(6, 6, MAX_DISTANCE),     
+  NewPing(3, 3, MAX_DISTANCE),      
+  NewPing(2, 2, MAX_DISTANCE),      
+};
+
+
+/*
+ * Reserved for future use, have yet to test with timer 2
+ *
+ * void intialise_sensors(){                 // Carried out during setup phase
+ *  pingTimer[0] = millis() + 75;           // First ping starts at 75ms, gives time for the Arduino to chill before starting.
+ *   for (uint8_t i = 1; i < SONAR_NUM; i++) // Set the starting time for each sensor.
+ *    pingTimer[i] = pingTimer[i - 1] + PING_INTERVAL;
+ *}
+ *
+ */
 
 //-----------------------------------------------------------------------------------------------------------------------------
 
-int scanning(bool dir){
+void scanning(){
  
-  uint8_t half_sen = SONAR_NUM / 2;
-  //uint8_t i = 0; // reserved for later when using 6 sensors
-  unsigned int left_sen;
-  unsigned int centre_sen;
-  unsigned int right_sen;
-
   if (dir == true){ //Use forward facing sonar(s)
 
-    act_sensor = 0;
-    //For now just we are just using a single sensor mounted at the front and rear
- 
+    if(act_sensor < 3){
+
+      time_since = millis();
+
+      if(time_since - last_ping >= ping_time){
+
+        array_pos[act_sensor] = for_array[act_sensor].ping_cm();
+
+        
+
+        /* if(array_pos[act_sensor] <= MIN_UPPER and array_pos[act_sensor] >= MIN_LOWER){
+         *
+         *
+         *   colAlert = true; //Doesnt currently do anything but the plan is that this acts as a fail safe
+         *                //should the SBC stop fail to send the stop command
+         * 
+         *}
+         */
+
+        if (array_pos[act_sensor] == 0){
+
+          out_range = true;
+          array_pos[act_sensor] = MAX_DISTANCE;
+
+        }
+
+        else{
+
+          out_range = false;
+
+        }  
+
+        act_sensor++;
+
+        last_ping = time_since;
+      }
+
+    }
+
   }
+ 
 
-  else{ //Use rear facing sonars
+  else{ //Switch to the rear facing ultrasonic array
 
-    act_sensor = 1;
-    //i = 3
+    if(act_sensor < 3){
+
+      time_since = millis();
+
+      if(time_since - last_ping >= ping_time){
+
+        array_pos[act_sensor] = rear_array[act_sensor].ping_cm();
+
+        /* if(array_pos[act_sensor] <= MIN_UPPER and array_pos[act_sensor] >= MIN_LOWER){
+         *
+         *  colAlert = true;
+         *  
+         *}
+         */
+
+        if (array_pos[act_sensor] == 0){
+
+          out_range = true;
+          array_pos[act_sensor] = MAX_DISTANCE;
+
+        }
+
+        else{
+
+          out_range = false;
+
+        }  
+
+        act_sensor++;
+
+        last_ping = time_since;
+
+
+      }
+
+    }
         
   }
-  
-  sonar[act_sensor].ping_timer(echoCheck(act_sensor)); // Do the ping (processing continues, interrupt will call echoCheck to look for echo).
 
-  centre_sen = cm[act_sensor];
-  
-  Serial.print(left_sen); Serial.print(","); // Reserved for later expansion
-  Serial.print(centre_sen);Serial.print(",");
-  Serial.println(right_sen);
+  check_time = millis();
 
-}
+  if(check_time - last_scan >= scan_now)
+  {
 
-uint8_t echoCheck(uint8_t act_sensor) { // If ping received, set the sensor distance to array.
-  if (sonar[act_sensor].check_timer())
-    cm[act_sensor] = sonar[act_sensor].ping_result / US_ROUNDTRIP_CM;
-}
+    if(new_data){
 
-/*
- 
-uint8_t array(uint8_t i){
-  
-  for (uint8_t i = 0; i < half_sen; i++) { // Loop through all the sensors.
-    if (millis() >= pingTimer[i]) {         // Is it this sensor's time to ping?
-      pingTimer[i] += PING_INTERVAL * SONAR_NUM;  // Set next time this sensor will be pinged.
-      if (i == 0 && currentSensor == SONAR_NUM - 1) clusterCycle(); // Sensor ping cycle complete, do something with the results.
-      sonar[currentSensor].timer_stop();          // Make sure previous timer is canceled before starting a new ping (insurance).
-      currentSensor = i;                          // Sensor being accessed.
-      cm[currentSensor] = 0;                      // Make distance zero in case there's no ping echo for this sensor.
-      sonar[currentSensor].ping_timer(echoCheck(currentSensor)); // Do the ping (processing continues, interrupt will call echoCheck to look for echo).
+      transmit(array_pos[0], array_pos[1], array_pos[2]);
+      new_data = false;
+
     }
+
+    last_scan = check_time;
+
   }
 
 }
-  // The rest of your code would go here.
 
-void clusterCycle() { // Sensor ping cycle complete, do something with the results.
-  for (uint8_t i = 0; i < SONAR_NUM; i++) {
-    Serial.print(i); //Todo remove print states and send value back to main array
-    Serial.print("=");
-    Serial.print(cm[i]);
-    Serial.print("cm ");
-  }
-  Serial.println();
-}
-*/
+//TODO - BNO055 9DOF module data processing for advance decision
+/**
+ * @brief Two options of encoder or bno055 to calculate speed
+ * 
+ */
 
-//TODO - BNO055 9DOF module data processing for advance decision 
