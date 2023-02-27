@@ -43,6 +43,8 @@ func = 0
 
 speedLock = 0
 
+last_sent = [0, 0, 0]
+
 lit_on = False
 
 #Light control does not have to be precise so this can simplely be toggled by the sbc with concern over the timing requirements
@@ -108,8 +110,9 @@ def stopped():
     transmit()
 
 
-def transmit():
-    toSend = (','.join(PiCommand) + '\n')
+def transmit(data1, data2, data3):
+    piCommand = [str(data1), str(data2). str(data3)]
+    toSend = (','.join(piCommand) + '\n')
     piComm.write(toSend.encode('utf-8'))
 
 
@@ -170,7 +173,7 @@ def coreData():
     set_turn = 48 #bit 00110000
 
     #Compare the infomation we just sent against what is return to ensure there are no errors
-    control,motion,angle=recieve(2)
+    control,motion,angle=recieve()
 
     control = int(control)
     motion = int(motion)
@@ -235,7 +238,7 @@ def sensorReadOut():
     dist_min = 20
     #dist_turn = 80
     
-    left,centre,right=recieve(3)
+    left,centre,right=recieve()
 
     centre = int(centre)
     right = int(right)
@@ -274,7 +277,7 @@ def sensorReadOut():
     #cell_Warn = 350
     #cell_opt= 370
 
-    #cell1,cell2,cell3=recieve(4)
+    #cell1,cell2,cell3=recieve()
 
     #if cell1 < cell_opt:
 
@@ -415,9 +418,9 @@ try:
             else:
                 lit_on = False
 
-        PiCommand = [str(speed),str(pos),str(func)] #functions are work in progress so stub for now
-        
-        transmit()
+        core_op = [speed,pos,func] #functions are work in progress so stub for now        
+
+        transmit(core_op[0], core_op[1], core_op[2])
         coreData()
         sensorReadOut()
         #batteryReadOut()
