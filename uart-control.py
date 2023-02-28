@@ -1,12 +1,12 @@
-#Basic opreation control test between the Raspberry Pi and Arduino microcontroller
-#Hardware used
-#Raspberry Pi B 2/3
-#Arduino Uno
-#velleman Motor shield
-#Tower Pro MG 995 Servo
-#Buck converter
-#Lipo battery
-#3D printed chasis
+# Basic opreation control test between the Raspberry Pi and Arduino microcontroller
+# Hardware used
+# Raspberry Pi B 2/3
+# Arduino Uno
+# velleman Motor shield
+# Tower Pro MG 995 Servo
+# Buck converter
+# Lipo battery
+# 3D printed chasis
 
 from time import sleep
 import serial
@@ -17,7 +17,7 @@ import termios
 import board
 import digitalio
 
-#Variables to store the control data feteched from the Arduino
+# Variables to store the control data feteched from the Arduino
 
 forMin = 0
 forMax = 0
@@ -47,16 +47,16 @@ last_sent = [0, 0, 0]
 
 lit_on = False
 
-#Light control does not have to be precise so this can simplely be toggled by the sbc with concern over the timing requirements
-#Remember pins will need to be assigned base on the sbc used
+# Light control does not have to be precise so this can simplely be toggled by the sbc with concern over the timing requirements
+# Remember pins will need to be assigned base on the sbc used
 
-#Pcduino pins:
+# Pcduino pins:
 #lamp1_pin = board.D8
 #lamp2_pin = board.D9
 #lamp3_pin = board.D10
 #lamp4_pin = board.D11
 
-#PI pins
+# PI pins
 lamp1_pin = board.D17
 lamp2_pin = board.D27
 lamp3_pin = board.D22
@@ -116,9 +116,9 @@ def transmit(data1, data2, data3):
     piComm.write(toSend.encode('utf-8'))
 
 
-def recieve(process):
+def recieve():
 
-    #Reverted back to simple format, ideally this will need to streamed to process slightly different sets of data
+    # Reverted back to simple format, ideally this will need to streamed to process slightly different sets of data
     recieveData = piComm.readline().decode('utf-8')
 
     return recieveData    
@@ -127,7 +127,8 @@ def recieve(process):
 myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
 print (myports)
 
-#Configure active serial port with whatever arduino type device is connected
+# Configure active serial port depend arduino type device is connected. The only limitation of this approuch is the 
+# case of the board being disconnected the reconnected that could make it register as 'ACMx' or 'ttyUSBx'
 
 for port in myports:
     if '/dev/ttyACM0' in port:
@@ -142,7 +143,7 @@ piComm = serial.Serial(arduLink,19200,timeout = 2)
 piComm.flush()
 
 
-#Fetch the motor operating parameters and store them to the array
+# Fetch the motor operating parameters and store them to the array
 motData = recieve()
 motData = motData.lstrip('Motor: ')
 motData = motData.split(",")
@@ -152,7 +153,7 @@ for m in range(len(motData)):
     print(motLabel[m] + str(motData[m]))
 
 
-#Fetch the Servo operating parameters and store them to the array
+# Fetch the Servo operating parameters and store them to the array
 servoData = recieve()
 servoData = servoData.lstrip('Servo: ')
 servoData = servoData.split(",")
@@ -197,7 +198,7 @@ def coreData():
         print("Error - not driving in Reverse")
 
 
-    #See if we are turn and which way we are turning
+    # See if we are turn and which way we are turning
     steer_check = control & set_turn
 
     if steer_check > 16 and exp_angle == serCentre:
@@ -210,7 +211,7 @@ def coreData():
         print("Error - failed to turn Left")
 
     
-    #second check the actual raw accelaration value, excluding direction
+    # second check the actual raw accelaration value, excluding direction
     if speed <= 185:
        exp_motion = speed + rev_offset
 
@@ -224,17 +225,17 @@ def coreData():
        print("Error - speed does not match expected value")
        print(motion)
 
-    #Finally check the angle against the expected one
+    # Finally check the angle against the expected one
     if exp_angle != angle:
        print("Error - angle does not match expected position")
        print(angle)
 
 
 def sensorReadOut():
-    #Process the sensor data - currently just using a single sensor at the front and rear for now. Later expand to using
-    #an array of 3 in the format left, centre, right. One array position at the front the other at the rear
+    # Process the sensor data - currently just using a single sensor at the front and rear for now. Later expand to using
+    # an array of 3 in the format left, centre, right. One array position at the front the other at the rear
     
-    dist_max = 200 #typical maximum of an ultrasonic sensor
+    dist_max = 200 # typical maximum of an ultrasonic sensor
     dist_min = 20
     #dist_turn = 80
     
@@ -271,7 +272,7 @@ def sensorReadOut():
         print("Sensors - Not obstacles found")
 
 #def batteryReadOut():
-    #Fetch the battery levels from the 3 cells of the 11.1 Lipo battery
+    # Fetch the battery levels from the 3 cells of the 11.1 Lipo battery
     
     #cell_critc = 330
     #cell_Warn = 350
@@ -330,11 +331,11 @@ try:
         keyp = readKey()
         
         if keyp == 'w' or ord(keyp) ==16:               
-            if speed < forMin: #if not already set forward the align with minimum forward vector.
+            if speed < forMin: # if not already set forward the align with minimum forward vector.
                    speed = 200
                    sleep(0.5)
             print('Forward: ' + str(speed))
-            run_time = 3            #start a counter to allow run time before return speed to 0 (not yet implemented)
+            run_time = 3            # start a counter to allow run time before return speed to 0 (not yet implemented)
             if lit_on == True:
                 if rev_lamp == True:
                     rev_lamp = False
@@ -412,16 +413,23 @@ try:
               preSpeed = speed
               speed = 0
               
-        elif keyp == 'l': #Toggle lighting on and off
+        elif keyp == 'l': # Toggle lighting on and off
             if lit_on == False:
                 lit_on = True
             else:
                 lit_on = False
 
-        core_op = [speed,pos,func] #functions are work in progress so stub for now        
+        core_op = [speed,pos,func] # functions are work in progress so stub for now        
 
         transmit(core_op[0], core_op[1], core_op[2])
-        coreData()
+
+        if core_op[0] != last_sent[0] or core_op[1] != last_sent[1] or core_op[2] != last_sent[2]:
+            coreData() # only read back if we are sending any new data 
+        
+        last_sent[0] = core_op[0]
+        last_sent[1] = core_op[1]
+        last_sent[2] = core_op[2]
+
         sensorReadOut()
         #batteryReadOut()
         sleep(0.2)

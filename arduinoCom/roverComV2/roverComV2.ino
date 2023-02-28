@@ -38,8 +38,9 @@ uint8_t control = 0;
 #define MAX_FORWARD 370  // position in the the range of 75 - 255
 #define STATIONARY 0
 
-uint8_t vel;
+uint16_t vel;
 bool dir;
+bool incoming_data;
 bool new_data;
 
 
@@ -115,7 +116,7 @@ void loop() {
   while(Serial.available() > 0){
     
     //sent in format: in_velocity, inAng, inFunc
-    uint8_t in_vel = Serial.parseInt();  // Input velocity, combining speed and direction as in the variables defined above
+    uint16_t in_vel = Serial.parseInt();  // Input velocity, combining speed and direction as in the variables defined above
     uint8_t in_ang = Serial.parseInt();  // Input angle for the steering servo
     uint8_t in_func = Serial.parseInt(); // Reserved for later use
 
@@ -123,6 +124,8 @@ void loop() {
     if (Serial.read() == '\n') {
       
       uint8_t motion = 0;
+
+      act_sensor = 0;
       
       if (in_vel != vel){ // Only attempt to write out a value if there is a change
       
@@ -151,8 +154,6 @@ void loop() {
         } 
         vel = in_vel;
 
-        act_sensor = 0;
-
         new_data = true;
 
       }
@@ -167,15 +168,21 @@ void loop() {
         else{
           
           bitClear(control, 5); // set turning bit bit to 0
-          str.write(CENTRE);    // if an invalid value is sent then default back to center          
+          str.write(CENTRE);    // if an invalid value is sent then default back to center
+          cur_ang = CENTRE;          
         }
 
-        act_sensor = 0;
+        new_data = true;
 
-        new_data = true;  
+      }
+
+      if (new_data == true){
+
+        transmit(control, motion, cur_ang);
+
       }
       
-      transmit(control, motion, cur_ang);
+      incoming_data = true; 
       
     }
   }
@@ -185,7 +192,7 @@ void loop() {
 
 }
 
-int update_velocity(int accel){
+uint16_t update_velocity(uint16_t accel){
   const uint8_t throt_min = 75; // Minimum pwm value at which the motor will still crawl at
   const uint8_t throt_max = 255;
   uint8_t throttle;
@@ -209,7 +216,7 @@ int update_velocity(int accel){
   return throttle;
 }
 
-int update_steering(uint8_t pos){ 
+uint8_t update_steering(uint8_t pos){ 
 
   if (pos <= MAX_RIGHT and pos > CENTRE){
 

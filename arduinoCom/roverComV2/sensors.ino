@@ -127,20 +127,22 @@ void scanning(){
         
   }
 
-  check_time = millis();
+  if(incoming_data){
 
-  if(check_time - last_scan >= scan_now)
-  {
+    check_time = millis();
 
-    if(new_data){
+    if(check_time - last_scan >= scan_now)
+    {
+
 
       transmit(array_pos[0], array_pos[1], array_pos[2]);
-      new_data = false;
+      incoming_data = false;
 
-    }
+
 
     last_scan = check_time;
 
+    }
   }
 
 }
