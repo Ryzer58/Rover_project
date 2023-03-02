@@ -18,11 +18,12 @@
 
 
 uint8_t control = 0;
+uint8_t func;
 
 /* Vellemen KA04 motor shield configuration - A stackable dual motor shield. It requires two pins 
- * to drive a single motor, one for direction and the other for PWM output. Their are
- * jumpers on the board give some flexibility in choosing the output pins used on either
- * channel A or B. Remember to amend sketch based on jumper positions
+ * to drive a single motor, one for setting the direction and the other to drive PWM output.
+ * Arduino pins used are configured by jumpers placed on the board headers. Each of the pins
+ * avaliable to control channel A or B are listed below.
  * 
  */
 
@@ -32,13 +33,12 @@ uint8_t control = 0;
 // Motor channel B:
 // #define MOTB_DIR = 8,12,13 - DIRB
 // #define MOTB_PWM = 9,10,11 - PWMB
-#define MIN_REVERSE 5    // Both the speed and direction are combined into a single velocity
-#define MAX_REVERSE 185  // value. It is mapped out below to set the direction based on
-#define MIN_FORWARD 190  // the give range then set the duty cycle realative to its
-#define MAX_FORWARD 370  // position in the the range of 75 - 255
+
+#define MIN_THROTTLE 75  // duty cycle range in which the motor actually moves
+#define MAX_THROTTLE 255  // Tweak according to the motor actually used
 #define STATIONARY 0
 
-uint16_t vel;
+uint8_t throttle;
 bool dir;
 bool incoming_data;
 bool new_data;
@@ -99,10 +99,8 @@ void setup() {
   //}
   
   Serial.print("Motor: ");
-  Serial.print(MIN_REVERSE); Serial.print(","); // Send values to the pi so it is full aware of what it is
-  Serial.print(MAX_REVERSE); Serial.print(","); // working with.
-  Serial.print(MIN_FORWARD); Serial.print(","); // maybe it would be better to combine to a single string
-  Serial.println(MAX_FORWARD);
+  Serial.print(MIN_THROTTLE); Serial.print(","); // Inform the SBC what the operating parameters are
+  Serial.print(MAX_THROTTLE); 
 
   Serial.print("Servo: ");
   Serial.print(CENTRE); Serial.print(",");
@@ -115,10 +113,11 @@ void loop() {
 
   while(Serial.available() > 0){
     
-    //sent in format: in_velocity, inAng, inFunc
-    uint16_t in_vel = Serial.parseInt();  // Input velocity, combining speed and direction as in the variables defined above
+    //sent in format: inFunc, in_velocity, inAng - TODO communications need a major reworking 
+    uint8_t in_func = Serial.parseInt(); // Input functiom, for now just repurpose as directional control rather than being unused
+    uint8_t in_throttle = Serial.parseInt();  // Input velocity, combining speed and direction as in the variables defined above
     uint8_t in_ang = Serial.parseInt();  // Input angle for the steering servo
-    uint8_t in_func = Serial.parseInt(); // Reserved for later use
+    
 
     // look for the newline. That's the end of your sentence:
     if (Serial.read() == '\n') {
@@ -126,34 +125,49 @@ void loop() {
       uint8_t motion = 0;
 
       act_sensor = 0;
-      
-      if (in_vel != vel){ // Only attempt to write out a value if there is a change
-      
-        if (in_vel >= MIN_FORWARD and in_vel <= MAX_FORWARD){
-           
-          dir = true;
-          motion = update_velocity(in_vel);
-          bitSet(control, 6); // 1100 0000 (192) - set motion and direction bit to 1
-          bitSet(control, 7);
-        }
-        else if (in_vel >= MIN_REVERSE and in_vel <= MAX_REVERSE){
-          
+
+      if(in_func != func){
+
+        
+        if (in_func == 0){
+
           dir = false;
-          motion = update_velocity(in_vel);
-          bitClear(control, 6); // 1000 0000 (128) set motion to 1 and drive to 0
-          bitSet(control, 7);
+          halt(); //stop the motor before changing direction
+          digitalWrite(MOTA_DIR, LOW);
+          bitSet(control, 6);
+
+        }
+
+        if (in_func == 1){
+
+          dir = true;
+          halt();
+          digitalWrite(MOTA_DIR, HIGH);
+          bitClear(control, 6);
+
+        }
+        
+      }
+      
+      if (in_throttle != throttle){ // Only attempt to write out a value if there is a change
+      
+        if (in_throttle >= MIN_THROTTLE and in_throttle <= MAX_THROTTLE){
+           
+          
+          motion = update_velocity(in_throttle);
+          throttle = motion;
+           
         }
         
         else{
           
-          halt(); // Stop the motors, either if intentional or if an invalid velocity is specified
+          halt(); // Stop the motors, either if intentional or if an invalid throttle is specified
+          throttle = 0;
           motion = 0;
           bitClear(control, 7); //set motion bit to 0
           
-
         } 
-        vel = in_vel;
-
+        
         new_data = true;
 
       }
@@ -193,27 +207,12 @@ void loop() {
 }
 
 uint16_t update_velocity(uint16_t accel){
-  const uint8_t throt_min = 75; // Minimum pwm value at which the motor will still crawl at
-  const uint8_t throt_max = 255;
-  uint8_t throttle;
   
-  if (dir == true){
-    throttle = map(accel, MIN_FORWARD, MAX_FORWARD, throt_min, throt_max);
-    digitalWrite(MOTA_DIR, HIGH);
-    //Serial.print("Driving forward at: ");
-    //Serial.println(throttle);
-
-  }
-
-  else{
-    throttle = map(accel, MIN_REVERSE, MAX_REVERSE, throt_min, throt_max);
-    digitalWrite(MOTA_DIR, LOW);
-    //Serial.print("Driving in reverse at: ");
-    //Serial.println(throttle);
-    
-  }
   analogWrite(MOTA_PWM, throttle);
+  bitSet(control, 7);// 1100 0000 (192) - set motion bit to 1
+  
   return throttle;
+
 }
 
 uint8_t update_steering(uint8_t pos){ 

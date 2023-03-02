@@ -19,16 +19,11 @@ import digitalio
 
 # Variables to store the control data feteched from the Arduino
 
-forMin = 0
-forMax = 0
-revMin = 0
-revMax = 0
-
-fwd_offset = 115
-rev_offset = 70
-
-motParam = [revMin, revMax, forMin, forMax]
-motLabel = ['Min Reverse ', 'Max Reverse ','Min Forward ','Max Forward ']
+min_speed = 0
+max_speed = 0
+mot_dir = 0
+motParam = [min_speed, max_speed]
+motLabel = ['Min throttle ', 'Max throttle']
 
 serRight = 0
 serCentre = 0
@@ -162,19 +157,21 @@ print("Servo configuaration: ")
 for s in range(len(servoData)):
     servoParam[s] = int(servoData[s])
     print(servoLabel[s] + str(servoData[s]))
-    
-revMin, revMax, forMin, forMax = [motParam[i] for i in [0 , 1, 2, 3]]
+
+min_speed, man_speed = [motParam[i] for i in [0 , 1]]
 serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
 
 def coreData():
     exp_angle = pos
-    exp_motion = 0
+    exp_motion = speed
 
     set_dir = 192 #bit 11000000
     set_turn = 48 #bit 00110000
 
     #Compare the infomation we just sent against what is return to ensure there are no errors
-    control,motion,angle=recieve()
+    posData = recieve()
+    posData = posData.split(",")
+    control,motion,angle = posData
 
     control = int(control)
     motion = int(motion)
@@ -188,14 +185,21 @@ def coreData():
     if dir_check == 0 and speed != 0:
         print("Error - not in motion")
 
-    elif dir_check != 0 and speed == 0:
-        print("Error - not stopped")
+    elif speed == 0:
+        if dir_check != 0 and mot_dir == 0:
+            print("Error - not stopped")
+        elif dir_check != 64 and mot_dir == 1:
+            print("Error - not stopped")
 
-    if dir_check == set_dir and speed < forMin:
+    if dir_check != set_dir and mot_dir == 1:
         print("Error - not driving forward")
 
-    elif dir_check == 128 and speed > revMax:
+    elif dir_check != 128 and mot_dir == 0:
         print("Error - not driving in Reverse")
+
+    if exp_motion != motion:
+       print("Error - speed does not match expected value")
+       print(motion)
 
 
     # See if we are turn and which way we are turning
@@ -210,22 +214,6 @@ def coreData():
     elif steer_check == 32 and exp_angle > serCentre:
         print("Error - failed to turn Left")
 
-    
-    # second check the actual raw accelaration value, excluding direction
-    if speed <= 185:
-       exp_motion = speed + rev_offset
-
-    elif speed >= 190:
-       exp_motion = speed - fwd_offset
-
-    else:
-        exp_motion = 0
-
-    if exp_motion != motion:
-       print("Error - speed does not match expected value")
-       print(motion)
-
-    # Finally check the angle against the expected one
     if exp_angle != angle:
        print("Error - angle does not match expected position")
        print(angle)
@@ -239,7 +227,9 @@ def sensorReadOut():
     dist_min = 20
     #dist_turn = 80
     
-    left,centre,right=recieve()
+    senData  = recieve()
+    senData = senData.split(",")
+    left,centre,right= senData
 
     centre = int(centre)
     right = int(right)
@@ -331,11 +321,10 @@ try:
         keyp = readKey()
         
         if keyp == 'w' or ord(keyp) ==16:               
-            if speed < forMin: # if not already set forward the align with minimum forward vector.
-                   speed = 200
-                   sleep(0.5)
+            mot_dir = 1
+            speed = min_speed
+            sleep(0.5)
             print('Forward: ' + str(speed))
-            run_time = 3            # start a counter to allow run time before return speed to 0 (not yet implemented)
             if lit_on == True:
                 if rev_lamp == True:
                     rev_lamp = False
@@ -343,70 +332,62 @@ try:
 
 
         elif keyp == 's' or ord(keyp) == 17:
-              if speed > revMax or speed < revMin:
-                     speed = 15
-                     sleep(0.5)
-              print('Reverse: ' + str(speed))
-              run_time = 3
-              if lit_on == True:
+            mot_dir = 0
+            speed = 15
+            sleep(0.5)
+            print('Reverse: ' + str(speed))
+            run_time = 3
+            if lit_on == True:
                 if fwd_lamp.value == True:
                     fwd_lamp.value = False
                 rev_lamp.value = True
 
         elif keyp == 'd' or ord(keyp) == 19:
-              print('Right:', end=' ')
-              if pos < serRight:
-                  pos = pos + 5
-                  print(str(pos))
-              if pos == serRight:
-                 print('at max')
-              run_time = 1 #give servo time to reach position
-              if lit_on == True:
+            print('Right:', end=' ')
+            if pos < serRight:
+                pos = pos + 5
+                print(str(pos))
+            if pos == serRight:
+                print('at max')
+            if lit_on == True:
                 lft_lamp.value = True
             
 
         elif keyp == 'a' or ord(keyp) == 18:
-              print('Left:', end=' ')
-              if pos > serLeft:
-                  pos = pos - 5
-                  print(str(pos))
-              if pos == serLeft:
-                  print('at max')
-              run_time = 1
-              if lit_on == True:
+            print('Left:', end=' ')
+            if pos > serLeft:
+                pos = pos - 5
+                print(str(pos))
+            if pos == serLeft:
+                print('at max')
+            if lit_on == True:
                 rt_lamp.value = True
 
         elif keyp == '.' or keyp == '>':
-              print('Accelarating', end=' ')
-              if speed >= revMin and speed < revMax: #Reverse Accelration
-                  speed = speed + 10
-                  print('in reverse to ' + str(speed))
+            print('Accelarating', end=' ')
+            if speed >= min_speed and speed <= max_speed: #Reverse Accelration
+                speed = speed + 10
+                if mot_dir == 1:
+                    print('forward at ' + str(speed))
+                else:
+                    print('in reverse at ' + str(speed))
 
-              elif speed >= forMin and speed < forMax: #Forward Accelration
-                  speed = speed + 10
-                  print('forward to ' + str(speed))
-
-              elif speed == 0:
-                   print('stationary')
-              
-              else:
-                   print('at max speed')
-
-        elif keyp == ',' or keyp == '<':
-            print('Deccelarating', end=' ')
-            if speed > revMin and speed <= revMax: #Reverse Accelration
-                  speed = speed - 10
-                  print('in reverse to ' + str(speed))
-                  
-            elif speed > forMin and speed <= forMax: #Forward Accelration
-                  speed = speed - 10
-                  print('forward to ' + str(speed))
-            
             elif speed == 0:
                  print('stationary')
-                 
-            else:
-                print('at min speed')
+                
+                  
+        elif keyp == ',' or keyp == '<':
+            print('Deccelarating', end=' ')
+            if speed >= min_speed and speed <= max_speed: #Reverse Accelration
+                speed = speed - 10
+                if mot_dir == 1:
+                    print('forward to ' + str(speed))
+                else:
+                    print('in reverse to ' + str(speed))
+
+            elif speed == 0:
+                 print('stationary')   
+            
           
         elif keyp == 'e' or '/':
               print('Stopping')
