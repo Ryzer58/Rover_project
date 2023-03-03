@@ -102,7 +102,7 @@ void setup() {
   Serial.print(MIN_THROTTLE); Serial.print(","); // Inform the SBC what the operating parameters are
   Serial.print(MAX_THROTTLE); 
 
-  Serial.print("Servo: ");
+  Serial.print("; Servo: ");
   Serial.print(CENTRE); Serial.print(",");
   Serial.print(MAX_LEFT); Serial.print(",");
   Serial.println(MAX_RIGHT);
@@ -134,7 +134,7 @@ void loop() {
           dir = false;
           halt(); //stop the motor before changing direction
           digitalWrite(MOTA_DIR, LOW);
-          bitSet(control, 6);
+          bitClear(control, 6);
 
         }
 
@@ -143,7 +143,7 @@ void loop() {
           dir = true;
           halt();
           digitalWrite(MOTA_DIR, HIGH);
-          bitClear(control, 6);
+          bitSet(control, 6);
 
         }
         
@@ -193,6 +193,7 @@ void loop() {
       if (new_data == true){
 
         transmit(control, motion, cur_ang);
+        new_data = false;
 
       }
       
@@ -206,12 +207,12 @@ void loop() {
 
 }
 
-uint16_t update_velocity(uint16_t accel){
+uint8_t update_velocity(uint16_t accel){
   
-  analogWrite(MOTA_PWM, throttle);
+  analogWrite(MOTA_PWM, accel);
   bitSet(control, 7);// 1100 0000 (192) - set motion bit to 1
   
-  return throttle;
+  return accel;
 
 }
 

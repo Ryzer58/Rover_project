@@ -138,8 +138,12 @@ piComm = serial.Serial(arduLink,19200,timeout = 2)
 piComm.flush()
 
 
-# Fetch the motor operating parameters and store them to the array
-motData = recieve()
+# Fetch the configuration data then store to arrays as allocated above
+configData = recieve()
+configData = configData.split("; ") # Seperate the motor from the Servo constraints
+motData, servoData = configData
+
+# Start by processing the Motor data
 motData = motData.lstrip('Motor: ')
 motData = motData.split(",")
 print("Motor Configuration: ")
@@ -147,9 +151,7 @@ for m in range(len(motData)):
     motParam[m] = int(motData[m])
     print(motLabel[m] + str(motData[m]))
 
-
-# Fetch the Servo operating parameters and store them to the array
-servoData = recieve()
+# Now proccess data retaining the Servo
 servoData = servoData.lstrip('Servo: ')
 servoData = servoData.split(",")
 
