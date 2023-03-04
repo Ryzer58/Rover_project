@@ -19,22 +19,21 @@ import digitalio
 
 # Variables to store the control data feteched from the Arduino
 
-min_speed = 0
-max_speed = 0
+min_throttle = 0
+max_throttle = 0
 mot_dir = 0
-motParam = [min_speed, max_speed]
-motLabel = ['Min throttle ', 'Max throttle']
+motParam = [min_throttle, max_throttle]
+motLabel = ['Min throttle ', 'Max throttle ']
+throttle = 0
 
-serRight = 0
-serCentre = 0
-serLeft = 0
-
-servoParam = [serCentre, serLeft, serRight]
+servo_right = 0
+servo_centre = 0
+servo_left = 0
+servoParam = [servo_centre, servo_left, servo_right]
 servoLabel = ['Centre ','Max left ','Max right ']
-
 pos = 30
-speed = 0
-func = 0
+
+#func = 0
 
 speedLock = 0
 
@@ -96,17 +95,17 @@ def readKey(getchar_fn=None):
     
     
 def reset():
-    reset = ['0','30','0']
-    transmit()
+    reset = ['0','0','30']
+    transmit(reset)
 
 
 def stopped():
-    stopping = ['0',str(pos),'0',]
+    stopping = [str(mot_dir),'0',str(pos),]
     transmit()
 
 
 def transmit(data1, data2, data3):
-    piCommand = [str(data1), str(data2). str(data3)]
+    piCommand = [str(data1), str(data2), str(data3)]
     toSend = (','.join(piCommand) + '\n')
     piComm.write(toSend.encode('utf-8'))
 
@@ -140,40 +139,44 @@ piComm.flush()
 
 # Fetch the configuration data then store to arrays as allocated above
 configData = recieve()
-configData = configData.split("; ") # Seperate the motor from the Servo constraints
+configData = configData.split(';') # Seperate the motor from the Servo constraints
 motData, servoData = configData
 
 # Start by processing the Motor data
 motData = motData.lstrip('Motor: ')
-motData = motData.split(",")
-print("Motor Configuration: ")
+motData = motData.split(',')
+print('Motor Configuration: ')
 for m in range(len(motData)):
     motParam[m] = int(motData[m])
     print(motLabel[m] + str(motData[m]))
 
 # Now proccess data retaining the Servo
-servoData = servoData.lstrip('Servo: ')
-servoData = servoData.split(",")
+servoData = servoData.lstrip(' Servo: ')
+servoData = servoData.split(',')
 
 print("Servo configuaration: ")
 for s in range(len(servoData)):
     servoParam[s] = int(servoData[s])
     print(servoLabel[s] + str(servoData[s]))
 
-min_speed, man_speed = [motParam[i] for i in [0 , 1]]
-serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
+min_throttle, max_throttle = [motParam[i] for i in [0 , 1]]
+serCevo_ctre, servo_left, servo_right = [servoParam[n] for n in [0, 1, 2]]
 
 def coreData():
     exp_angle = pos
-    exp_motion = speed
+    exp_motion = throttle
 
-    set_dir = 192 #bit 11000000
-    set_turn = 48 #bit 00110000
+    mov_for = 192   # bits 11000000
+    mov_rev = 128  # bits 10000000
+    turn_right = 48 # bits 00110000
+    turn_left = 32  # bits 00100000
 
     #Compare the infomation we just sent against what is return to ensure there are no errors
     posData = recieve()
     posData = posData.split(",")
-    control,motion,angle = posData
+    control = posData[0]
+    motion = posData[1]
+    angle = posData[2]
 
     control = int(control)
     motion = int(motion)
@@ -182,43 +185,47 @@ def coreData():
     #first check the control, which is configure in bits to see roughly if the rover is 
     # behaving as expected.
 
-    dir_check = control & set_dir
+    dir_check = control & mov_for
 
-    if dir_check == 0 and speed != 0:
-        print("Error - not in motion")
+    if dir_check == 0 and throttle != 0:
+        print("Drive Error - not moving")
 
-    elif speed == 0:
+    elif throttle == 0:
         if dir_check != 0 and mot_dir == 0:
-            print("Error - not stopped")
-        elif dir_check != 64 and mot_dir == 1:
-            print("Error - not stopped")
+            print("Drive Error - not stopped")
+        
+        if dir_check != 64 and mot_dir == 1:
+            print("Drive Error - not stopped")
 
-    if dir_check != set_dir and mot_dir == 1:
-        print("Error - not driving forward")
+    
+    elif throttle != 0:
+        if dir_check != mov_for and mot_dir == 1:
+            print("Drive Error - not driving forward")
+            print(dir_check)
 
-    elif dir_check != 128 and mot_dir == 0:
-        print("Error - not driving in Reverse")
+        elif dir_check != mov_rev and mot_dir == 0:
+            print("Drive Error - not driving in Reverse")
+            print(dir_check)
 
     if exp_motion != motion:
-       print("Error - speed does not match expected value")
-       print(motion)
+       print("Drive Error - throttle should be " + str(exp_motion) + " but returned " + str(motion))
 
 
     # See if we are turn and which way we are turning
-    steer_check = control & set_turn
+    steer_check = control & turn_right
 
-    if steer_check > 16 and exp_angle == serCentre:
+    if steer_check > 16 and exp_angle == servo_centre:
         print("Error - steering not Centred")
 
-    elif steer_check == set_turn and exp_angle < serCentre:
+    elif steer_check == turn_right and exp_angle < servo_centre:
         print("Error - failed to turn Right")
 
-    elif steer_check == 32 and exp_angle > serCentre:
+    elif steer_check == 32 and exp_angle > servo_centre:
         print("Error - failed to turn Left")
 
     if exp_angle != angle:
-       print("Error - angle does not match expected position")
-       print(angle)
+       print("Steer Error - angle should be set to " + str(exp_angle) + " but returned " + str(angle))
+       
 
 
 def sensorReadOut():
@@ -324,9 +331,9 @@ try:
         
         if keyp == 'w' or ord(keyp) ==16:               
             mot_dir = 1
-            speed = min_speed
+            throttle = min_throttle
             sleep(0.5)
-            print('Forward: ' + str(speed))
+            print('Forward: ' + str(throttle))
             if lit_on == True:
                 if rev_lamp == True:
                     rev_lamp = False
@@ -335,9 +342,9 @@ try:
 
         elif keyp == 's' or ord(keyp) == 17:
             mot_dir = 0
-            speed = 15
+            throttle = min_throttle
             sleep(0.5)
-            print('Reverse: ' + str(speed))
+            print('Reverse: ' + str(throttle))
             run_time = 3
             if lit_on == True:
                 if fwd_lamp.value == True:
@@ -346,10 +353,10 @@ try:
 
         elif keyp == 'd' or ord(keyp) == 19:
             print('Right:', end=' ')
-            if pos < serRight:
+            if pos < servo_right:
                 pos = pos + 5
                 print(str(pos))
-            if pos == serRight:
+            if pos == servo_right:
                 print('at max')
             if lit_on == True:
                 lft_lamp.value = True
@@ -357,44 +364,48 @@ try:
 
         elif keyp == 'a' or ord(keyp) == 18:
             print('Left:', end=' ')
-            if pos > serLeft:
+            if pos > servo_left:
                 pos = pos - 5
                 print(str(pos))
-            if pos == serLeft:
+            if pos == servo_left:
                 print('at max')
             if lit_on == True:
                 rt_lamp.value = True
 
         elif keyp == '.' or keyp == '>':
-            print('Accelarating', end=' ')
-            if speed >= min_speed and speed <= max_speed: #Reverse Accelration
-                speed = speed + 10
+            if throttle < max_throttle and throttle >= min_throttle:
+                print('Accelarating', end=' ')
+                throttle = throttle + 10
                 if mot_dir == 1:
-                    print('forward at ' + str(speed))
+                    print(' forward to ' + str(throttle))
                 else:
-                    print('in reverse at ' + str(speed))
+                    print(' in reverse to ' + str(throttle))
 
-            elif speed == 0:
-                 print('stationary')
+            elif throttle == 0:
+                 print('Currently idle')
+
+            else:
+                print('Set to max throttle')
                 
                   
         elif keyp == ',' or keyp == '<':
-            print('Deccelarating', end=' ')
-            if speed >= min_speed and speed <= max_speed: #Reverse Accelration
-                speed = speed - 10
+            if throttle > min_throttle:
+                print('Deccelarating', end=' ')
+                throttle = throttle - 10
                 if mot_dir == 1:
-                    print('forward to ' + str(speed))
+                    print(' forward to ' + str(throttle))
                 else:
-                    print('in reverse to ' + str(speed))
+                    print(' in reverse to ' + str(throttle))
 
-            elif speed == 0:
-                 print('stationary')   
-            
+            elif throttle == 0:
+                 print('Currently idle')
+
+            else:
+                print('Set to min throttle')  
           
         elif keyp == 'e' or '/':
               print('Stopping')
-              preSpeed = speed
-              speed = 0
+              throttle = 0
               
         elif keyp == 'l': # Toggle lighting on and off
             if lit_on == False:
@@ -402,7 +413,7 @@ try:
             else:
                 lit_on = False
 
-        core_op = [speed,pos,func] # functions are work in progress so stub for now        
+        core_op = [mot_dir,throttle,pos] # functions are work in progress so stub for now        
 
         transmit(core_op[0], core_op[1], core_op[2])
 
