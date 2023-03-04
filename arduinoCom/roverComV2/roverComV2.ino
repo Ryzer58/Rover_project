@@ -36,7 +36,6 @@ const uint8_t MOTA_PWM = 5; //3,6 - PWMA
 
 const uint8_t MIN_THROTTLE = 75;  // duty cycle range in which the motor actually moves
 const uint8_t MAX_THROTTLE = 255;  // Tweak according to the motor actually used
-#define STATIONARY 0
 
 uint8_t throttle;
 bool dir;
@@ -147,6 +146,11 @@ void loop() {
 
         }
 
+        //function code 10 - sensor related operations - TODO
+
+        //function code 20 - bno related operations
+
+        func = in_func;
         new_data = true;
         
       }
@@ -209,7 +213,7 @@ void loop() {
 
 }
 
-uint8_t update_velocity(uint16_t accel){
+uint8_t update_velocity(uint8_t accel){
   
   analogWrite(MOTA_PWM, accel);
   bitSet(control, 7);// 1100 0000 (192) - set motion bit to 1
@@ -252,5 +256,6 @@ void halt(){
   
   analogWrite(MOTA_PWM, 0);
   bitClear(control, 7); // set motion bit to 0 to signify that the Rover is now idle
+  throttle = 0;
   
 }

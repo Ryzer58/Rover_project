@@ -160,11 +160,11 @@ for s in range(len(servoData)):
     print(servoLabel[s] + str(servoData[s]))
 
 min_throttle, max_throttle = [motParam[i] for i in [0 , 1]]
-serCevo_ctre, servo_left, servo_right = [servoParam[n] for n in [0, 1, 2]]
+servo_centre, servo_left, servo_right = [servoParam[n] for n in [0, 1, 2]]
 
 def coreData():
     exp_angle = pos
-    exp_motion = throttle
+    exp_throttle = throttle
 
     mov_for = 192   # bits 11000000
     mov_rev = 128  # bits 10000000
@@ -182,8 +182,10 @@ def coreData():
     motion = int(motion)
     angle = int(angle)
 
-    #first check the control, which is configure in bits to see roughly if the rover is 
-    # behaving as expected.
+    # first check the control, by inspecting the bits to check that the Rover is 
+    # working as expected. There are currently issue when attempting a turn seems
+    # to lead to a drive error which could be a false positive or a sign of a deeper
+    # routed issue
 
     dir_check = control & mov_for
 
@@ -207,8 +209,8 @@ def coreData():
             print("Drive Error - not driving in Reverse")
             print(dir_check)
 
-    if exp_motion != motion:
-       print("Drive Error - throttle should be " + str(exp_motion) + " but returned " + str(motion))
+    if exp_throttle != motion:
+       print("Drive Error - throttle should be " + str(exp_throttle) + " but returned " + str(motion))
 
 
     # See if we are turn and which way we are turning
@@ -220,7 +222,7 @@ def coreData():
     elif steer_check == turn_right and exp_angle < servo_centre:
         print("Error - failed to turn Right")
 
-    elif steer_check == 32 and exp_angle > servo_centre:
+    elif steer_check == turn_left and exp_angle > servo_centre:
         print("Error - failed to turn Left")
 
     if exp_angle != angle:
