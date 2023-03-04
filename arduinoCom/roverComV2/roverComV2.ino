@@ -28,14 +28,14 @@ uint8_t func;
  */
 
 // Motor channel A:
-#define MOTA_DIR 4 //7,2 - Alternative avaliable pins via jumper DIRA
-#define MOTA_PWM 5 //3,6 - PWMA
+const uint8_t MOTA_DIR = 4; //7,2 - Alternative avaliable pins via jumper DIRA
+const uint8_t MOTA_PWM = 5; //3,6 - PWMA
 // Motor channel B:
 // #define MOTB_DIR = 8,12,13 - DIRB
 // #define MOTB_PWM = 9,10,11 - PWMB
 
-#define MIN_THROTTLE 75  // duty cycle range in which the motor actually moves
-#define MAX_THROTTLE 255  // Tweak according to the motor actually used
+const uint8_t MIN_THROTTLE = 75;  // duty cycle range in which the motor actually moves
+const uint8_t MAX_THROTTLE = 255;  // Tweak according to the motor actually used
 #define STATIONARY 0
 
 uint8_t throttle;
@@ -52,11 +52,11 @@ bool new_data;
  */
 
 Servo str;               //Main steering servo,
-#define CENTRE 30
-#define MAX_LEFT 0       //Left and Right may need to swapped based on the orientation
-#define MAX_RIGHT 60     //of the servo
+const uint8_t CENTRE = 30;
+const uint8_t MAX_LEFT = 0;       //Left and Right may need to swapped based on the orientation
+const uint8_t MAX_RIGHT = 60;     //of the servo
 uint8_t cur_ang = CENTRE;    //Start at center point
-#define pivot_time = 12; //Time taken for servo to do a an arc of 60 degrees in nanoseconds
+//#define pivot_time = 12; //Time taken for servo to do a an arc of 60 degrees in nanoseconds
 
 
 /*------------------------------------------------------------------------------------------
@@ -146,6 +146,8 @@ void loop() {
           bitSet(control, 6);
 
         }
+
+        new_data = true;
         
       }
       
