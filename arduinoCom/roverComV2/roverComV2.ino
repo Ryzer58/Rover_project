@@ -18,7 +18,7 @@
 
 
 uint8_t control = 0;
-uint8_t func;
+uint8_t func = 0;
 
 /* Vellemen KA04 motor shield configuration - A stackable dual motor shield. It requires two pins 
  * to drive a single motor, one for setting the direction and the other to drive PWM output.
@@ -120,8 +120,6 @@ void loop() {
 
     // look for the newline. That's the end of your sentence:
     if (Serial.read() == '\n') {
-      
-      uint8_t motion = 0;
 
       act_sensor = 0;
 
@@ -160,8 +158,7 @@ void loop() {
         if (in_throttle >= MIN_THROTTLE and in_throttle <= MAX_THROTTLE){
            
           
-          motion = update_velocity(in_throttle);
-          throttle = motion;
+          throttle = update_velocity(in_throttle);
            
         }
         
@@ -169,12 +166,12 @@ void loop() {
           
           halt(); // Stop the motors, either if intentional or if an invalid throttle is specified
           throttle = 0;
-          motion = 0;
           bitClear(control, 7); //set motion bit to 0
           
         } 
         
         new_data = true;
+        //throttle = in_throttle;
 
       }
       
@@ -198,7 +195,7 @@ void loop() {
 
       if (new_data == true){
 
-        transmit(control, motion, cur_ang);
+        transmit(control, throttle, cur_ang);
         new_data = false;
 
       }
