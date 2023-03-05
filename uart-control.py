@@ -95,13 +95,13 @@ def readKey(getchar_fn=None):
     
     
 def reset():
-    reset = ['0','0','30']
-    transmit(reset)
+    reset = [0,0,30]
+    transmit(reset[0], reset[1], reset[2])
 
 
 def stopped():
-    stopping = [str(mot_dir),'0',str(pos),]
-    transmit()
+    stopping = [mot_dir,0,pos,]
+    transmit(stopping[0], stopping[1], stopping[2])
 
 
 def transmit(data1, data2, data3):
@@ -247,7 +247,7 @@ def sensorReadOut():
     left = int(left)
     
     #start of by read the centre facing sensor
-    if centre < dist_min & centre != 0:
+    if centre < dist_min and centre != 0:
         
         c_value = str(centre)
         print("Sensors - object found within " + c_value + "cm, stopping")
@@ -332,9 +332,10 @@ try:
         keyp = readKey()
         
         if keyp == 'w' or ord(keyp) ==16:               
-            mot_dir = 1
-            throttle = min_throttle
-            sleep(0.5)
+            if mot_dir != 1:
+                mot_dir = 1
+                throttle = min_throttle
+                sleep(0.5)
             print('Forward: ' + str(throttle))
             if lit_on == True:
                 if rev_lamp == True:
@@ -343,9 +344,10 @@ try:
 
 
         elif keyp == 's' or ord(keyp) == 17:
-            mot_dir = 0
-            throttle = min_throttle
-            sleep(0.5)
+            if mot_dir !=0:
+                mot_dir = 0
+                throttle = min_throttle
+                sleep(0.5)
             print('Reverse: ' + str(throttle))
             run_time = 3
             if lit_on == True:
