@@ -100,7 +100,7 @@ def reset():
 
 
 def stopped():
-    stopping = [str(mot_dir),'0',str(pos),]
+    stopping = [mot_dir,0,pos,]
     transmit(stopping[0], stopping[1], stopping[2])
 
 
