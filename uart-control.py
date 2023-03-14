@@ -31,7 +31,8 @@ servo_centre = 0
 servo_left = 0
 servoParam = [servo_centre, servo_left, servo_right]
 servoLabel = ['Centre ','Max left ','Max right ']
-pos = 30
+pos = 30 # The actual postion of the Servo
+bearing = 0 # Relative steering position of the rover
 
 #func = 0
 
@@ -368,14 +369,15 @@ try:
             print('Turning right:', end=' ')
             if pos < servo_right:
                 pos = pos + 5
+                bearing = bearing + 5
             if pos < servo_centre:
-                print('now bearing left at ' + str(pos))
+                print('by 5 deg now left at ' + str(abs(bearing)))
             if pos == servo_centre:
-                print('now centred')
+                print('steering returned to centre')
             else:
-                print('now at ' + str(pos))
+                print('now at ' + str(bearing))
             if pos == servo_right:
-                print('at max')
+                print('unable to move at full turn')
             if lit_on == True:
                 lft_lamp.value = True
             
@@ -384,14 +386,15 @@ try:
             print('Turning left:', end=' ')
             if pos > servo_left:
                 pos = pos - 5
+                bearing = bearing - 5
             if pos > servo_centre:
-                print('now bearing right at ' + str(pos))
+                print('by 5 deg now right at ' + str(bearing))
             if pos == servo_centre:
-                print('now centred')
+                print('steering returned to centre')
             else:
-                print('now at ' + str(pos))
+                print('now at ' + str(abs(bearing)))
             if pos == servo_left:
-                print('at max')
+                print('unable to move at full turn')
             if lit_on == True:
                 rt_lamp.value = True
 
