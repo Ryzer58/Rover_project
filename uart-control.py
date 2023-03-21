@@ -31,7 +31,8 @@ servo_centre = 0
 servo_left = 0
 servoParam = [servo_centre, servo_left, servo_right]
 servoLabel = ['Centre ','Max left ','Max right ']
-pos = 30
+pos = 30 # The actual postion of the Servo
+bearing = 0 # Relative steering position of the rover
 
 #func = 0
 
@@ -235,7 +236,8 @@ def sensorReadOut():
     # an array of 3 in the format left, centre, right. One array position at the front the other at the rear
     
     dist_max = 200 # typical maximum of an ultrasonic sensor
-    dist_min = 20
+    dist_min_upper = 5
+    dist_min_lower = 2
     #dist_turn = 80
     
     senData  = recieve()
@@ -247,24 +249,28 @@ def sensorReadOut():
     left = int(left)
     
     #start of by read the centre facing sensor
-    if centre < dist_min and centre != 0:
+    if centre < dist_max:
         
-        c_value = str(centre)
-        print("Sensors - object found within " + c_value + "cm, stopping")
-        stopped()
+        if centre > dist_min_upper:
+           c_value = str(centre)
+           print("Sensors - Warning object found within " + c_value + "cm")
 
-        if right < dist_min:
+        if centre < dist_min_upper and centre > dist_min_lower:
+           stopped()
+           print("Sensors - Stopping object found directly in front of path")
 
-            print("Suggest turn left")
+        if right < dist_min_upper and right > left:
+
+            print("Suggest turn right")
 
         #   if right != 0:
         #       stopped() #TODO add proper avoidance handling
 
         # Turn left by x% based on closeness of the object
             
-        if left <dist_min:
+        if left <dist_min_upper and left > right:
 
-            print("Suggest turn right")
+            print("Suggest turn left")
 
         #   if left != 0:
         #      stopped()
@@ -334,6 +340,8 @@ try:
         if keyp == 'w' or ord(keyp) ==16:               
             if mot_dir != 1:
                 mot_dir = 1
+                throttle = min_throttle # Reset to lowest speed if changing direction
+            elif throttle == 0:
                 throttle = min_throttle
                 sleep(0.5)
             print('Forward: ' + str(throttle))
@@ -347,6 +355,8 @@ try:
             if mot_dir !=0:
                 mot_dir = 0
                 throttle = min_throttle
+            elif throttle == 0:
+                throttle = min_throttle
                 sleep(0.5)
             print('Reverse: ' + str(throttle))
             run_time = 3
@@ -356,23 +366,35 @@ try:
                 rev_lamp.value = True
 
         elif keyp == 'd' or ord(keyp) == 19:
-            print('Right:', end=' ')
+            print('Turning right:', end=' ')
             if pos < servo_right:
                 pos = pos + 5
-                print(str(pos))
+                bearing = bearing + 5
+            if pos < servo_centre:
+                print('by 5 deg now left at ' + str(abs(bearing)))
+            if pos == servo_centre:
+                print('steering returned to centre')
+            else:
+                print('now at ' + str(bearing))
             if pos == servo_right:
-                print('at max')
+                print('unable to move at full turn')
             if lit_on == True:
                 lft_lamp.value = True
             
 
         elif keyp == 'a' or ord(keyp) == 18:
-            print('Left:', end=' ')
+            print('Turning left:', end=' ')
             if pos > servo_left:
                 pos = pos - 5
-                print(str(pos))
+                bearing = bearing - 5
+            if pos > servo_centre:
+                print('by 5 deg now right at ' + str(bearing))
+            if pos == servo_centre:
+                print('steering returned to centre')
+            else:
+                print('now at ' + str(abs(bearing)))
             if pos == servo_left:
-                print('at max')
+                print('unable to move at full turn')
             if lit_on == True:
                 rt_lamp.value = True
 

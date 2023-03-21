@@ -5,7 +5,7 @@
 unsigned long last_ping;
 unsigned long time_since;
 unsigned long ping_time = 50;         //Minimum interval between pings to account for cross echo
-unsigned long last_scan;            //Used in test program to moderate the sampling time to 500 ms
+unsigned long last_scan;              //Used in test program to moderate the sampling time to 500 ms
 unsigned long check_time;
 unsigned long scan_now = 500;
 
@@ -17,7 +17,7 @@ bool out_range;
 NewPing for_array[SONAR_NUM] = {      // Front facing sensors.
   NewPing(12, 12, MAX_DISTANCE),      // Right
   NewPing(10, 10, MAX_DISTANCE),      // Centre
-  NewPing(8, 8, MAX_DISTANCE),         // Left
+  NewPing(8, 8, MAX_DISTANCE),        // Left
 };
 
 NewPing rear_array[SONAR_NUM] = {     //Rear facing sensors
@@ -28,7 +28,7 @@ NewPing rear_array[SONAR_NUM] = {     //Rear facing sensors
 
 
 /*
- * Reserved for future use, have yet to test with timer 2
+ * Reserved for possible future use, have yet to test with timer 2
  *
  * void intialise_sensors(){                 // Carried out during setup phase
  *  pingTimer[0] = millis() + 75;           // First ping starts at 75ms, gives time for the Arduino to chill before starting.
@@ -126,6 +126,12 @@ void scanning(){
     }
         
   }
+
+  /*
+   * The only slight issue with the current storing distance data to single array is that reading could become muddled
+   * when we change direction mid way through a sweep
+   * 
+   */
 
   if(incoming_data){
 
