@@ -12,5 +12,5 @@ DEVICE = "input_uvc.so" #"raspi_cam.so"
 SOURCE = "video1"
 
 
-export LD_LIBRARY_PATH=/home/ryan/mjg-streamer/mjpg-streamer-experiemental
-./mjpg_streamer -i "$DEVICE -f $FRAMERATE -r $SIZE -d /dev/$SOURCE" -o "output_http.so -w ./www -p $PORT"
+export LD_LIBRARY_PATH=/usr/local/LBD_LIBRARY_PATH
+mjpg_streamer -i "$DEVICE -f $FRAMERATE -r $SIZE -d /dev/$SOURCE" -o "output_http.so -w ./www -p $PORT"
