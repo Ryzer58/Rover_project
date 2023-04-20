@@ -8,7 +8,7 @@
 -->
 <html>
 <head>
-	<link rel="stylesheet" type="text/css" href= "../static/style.css">
+	<link rel="stylesheet" type="text/css" href= "./static/style.css">
 	<title>Pcduino web controller V1.0</title>
 <script type="javascript">
 document.onkeypress = keypressed;
@@ -114,26 +114,26 @@ function keypressed (event) {
       
 		
 		<button type="button" class="forward dir-buttons" name="forward" value="0" id="forward">Forward
-		<input type="image" src="../static/forward.png" id="imgforward"
+		<input type="image" src="./static/forward.png" id="imgforward"
         onclick="sendMotion ('forward');"/>
          
 		<button type="button" class="right dir-buttons" name="rtforward" value="0" id="right">Right
-		<input type="image" src="../static/right.png"
+		<input type="image" src="./static/right.png"
 		id="imgRtforward" onclick="sendMotion ('right');"/></button>
      
 		
 		<button type="button" class="em-stop dir-buttons" name="stop" value="0" id="stop" />Stop
-		<input type="image" src="../static/stop.png"   id="imgstop"
+		<input type="image" src="./static/stop.png"   id="imgstop"
 		onclick="sendMotion ('stop');"/></button>
 		
 		
 		<button type="button" class="left dir-buttons" name="left" value="0" id="left">Left
-		<input type="image" src="../static/left.png" id="imgleft"
+		<input type="image" src="./static/left.png" id="imgleft"
 		onclick="sendMotion ('left');"/></button>
          
 		
 		<button type="button" class="reverse dir-buttons" name="backward" value="0" id="backward">Reverse
-		<input type="image" src="../static/backward.png" id="imgbackward"
+		<input type="image" src="./static/backward.png" id="imgbackward"
 		onclick="sendMotion ('backward');"/></button>
 	  
 	</div>
@@ -141,27 +141,27 @@ function keypressed (event) {
 	<div class = "camPanel">
 		
 		<button type="button" class="pan-left cam-buttons" name="panlt" id="panlt" />
-		<input type="image" src="../static/1leftarrow.png"
+		<input type="image" src="./static/1leftarrow.png"
 		id="imgpanlt" onclick="sendMotion ('panlt');"
 		onkeypress="keypressed (event);"/>
 		
 		<button type="button" class="pan-right cam-buttons" name="panrt" id="panrt" />
-		<input type="image" src="../static/1rightarrow.png"
+		<input type="image" src="./static/1rightarrow.png"
 		id="imgpanrt" onclick="sendMotion ('panrt');"/>
          
         
         <button type="button" class="pan-home cam-buttons" name="homecam" id="homecam" />Home
-        <input type="image" src="../static/gohome.png"
+        <input type="image" src="./static/gohome.png"
         id="imghome" onclick="sendMotion ('home');"/>
          
         
         <button class="pan-left-full cam-buttons" name="panfull_lt" id="panfull_lt" />
-        <input type="image" src="../static/arrow-left-double.png"
+        <input type="image" src="./static/arrow-left-double.png"
         id="imgpanall_lt" onclick="sendMotion ('panfull_lt');"
         onkeypress="keypressed (event);"/>
 		
         <button class="pan-right-full cam-buttons" name="panfull_rt" id="panfull_rt" />
-        <input type="image" src="../static/arrow-right-double.png"
+        <input type="image" src="./static/arrow-right-double.png"
         id="imgpanall_rt" onclick="sendMotion ('panfull_rt');"/>
 	</div>
 	
@@ -195,7 +195,7 @@ function keypressed (event) {
 	</div>
 	
 	<div class="feed">
-			<img src="http://192.168.0.170:8080/?action=stream" alt="Feed Offline">
+			<img src="localhost:8080/?action=stream" alt="Feed Offline">
 	</div>
    
 	</font>
