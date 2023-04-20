@@ -8,8 +8,8 @@
 PORT="8080"
 SIZE="640x480"
 FRAMERATE="10" #30 is the max fps for the Trust webcam
-DEVICE = "input_uvc.so" #"raspi_cam.so"
-SOURCE = "video1" #"video0"
+DEVICE="input_uvc.so" #"raspi_cam.so"
+SOURCE="video1" #"video0"
 
 
 export LD_LIBRARY_PATH=/usr/local/bin
