@@ -12,7 +12,7 @@
 # A second would be a custom driver at the uboot stage that configures the
 # polarity before it is handed over to the kernel
 
-CHANNEL = 0
+CHANNEL=0
 
 echo $CHANNEL > /sys/class/pwm/pwmchip0/export
 echo normal > /sys/class/pwm/pwmchip0/pwm$CHANNEL/polarity
