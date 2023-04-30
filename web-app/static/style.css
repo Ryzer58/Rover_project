@@ -113,12 +113,28 @@
 	left:180px;
 }
 
-.speedTime{
+.throttle-param{
+
+	position: absolute;
+	right: 30px;
+	top: 800px;
+	list-style: none;
+
 	
+}
+
+.run-duration{
+
+	position: absolute;
+	right: 30px;
+	top: 1000px;
+	list-style: none;
+
 }
 
 .feed{
 	
 	position: absolute;
 	left: 150px;
+	
 }
