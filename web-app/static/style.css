@@ -115,6 +115,25 @@
 .pan-right-full{
 	
 	left:180px;
+}
+
+.throttle-param{
+
+	position: absolute;
+	right: 30px;
+	top: 800px;
+	list-style: none;
+
+	
+}
+
+.run-duration{
+
+	position: absolute;
+	right: 30px;
+	top: 1000px;
+	list-style: none;
+
 
 }
 
@@ -210,5 +229,7 @@
 	bottom: 20px;
 	right: 50px;
 	
+	
 }
+
 

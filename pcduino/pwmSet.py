@@ -1,3 +1,7 @@
+# A simple way to interfaces with the A10/a20 PWM controller via pwmsysfs. It's worth noting that the A10 only has an 8-bit resolution
+# which along with the limited range of prescalers means that there are few frequecies we can use to control a motor as a small 
+# range of duty values being applied.
+
 import os.path
 import math
 HARD_PWM_PINS = ('pwm0', 'pwm1')
@@ -30,13 +34,7 @@ def pulseDuration(channel, freq):
 
     period = int((1/freq)*1000000000)
     with open(PIN_DUR % id, 'w') as f:
-        f.write(str(period))
-
-    # Inline with the PWM framework the value is written in nanoseconds
-    # maybe later add an arguement that takes the frequency and converts
-    # it into a nanosecond value. Be mindful that the Pcduino2 only has
-    # an 8 bit PWM counter that is limited by the selected prescaler.
-    
+        f.write(str(freq))
 
 def pulseDuty(channel, value):
     """set the duty cycle"""
@@ -79,8 +77,5 @@ def servo(channel, angle):
     with open(PIN_DUTY_CYCLE % id, 'w') as f:
        f.write(str(dutyCycle))
 
-#def soft_duration(channel, angle):
-#    """For use with pins that are not hardware capbale"""
-
-#def soft_duty(channel, angle):
-#    """soft duty"""
+# def softPwm()
+# To implement later in a way that mimmics the original arduino layout
