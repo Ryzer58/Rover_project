@@ -4,13 +4,14 @@
 #
 # Written by Ryzer - 2021/2022 (v1.0)
 #
-# Uses Adafruit Blinka, pyserial and Flask
+# Uses pyserial and Flask
+# Adafruit Blinka may be used if going down the approuch of incorprating less time dependant functions
 #
-# A Pcduino running an Armbian based image.
-# Ensure that the overlays for both I2C2
-# AND PWM overlay are enabled prior to using.
-# The Pcduino has 2 hardware capble PWM which
-# can be selected below
+# Main control script, for connecting to the microcontroller handling the time sensitive operations of
+# controlling motors and reading sensors. If using RaspberryPi with Raspian OS we will most likely be
+# using USB ports so not much software configuration will be needed. If using the Pcduino or any
+# SBC that is running Armbian be sure to activate the appropriate Serial Overlay. 
+# 
 
 import sys
 import time
@@ -19,132 +20,152 @@ from flask import Flask, render_template, request
 
 app = Flask (__name__, static_url_path = '')
 
-#TODO - Modify the intial Pcduino flask script to instead send comands over serial
-#Remove useless control statements
+# Rover operating parameters to be populated by information collected from Arduino like that used in the intial
+# cli based program
 
-#like with the cli test begin by intialising serial communication
+min_throttle = 0
+max_throttle = 0
+num_mot = 0
+throttle = 0
+profile = throttle
+direction = True
 
-#Predefine controller information to be adjusted based on data fetched back from the Arduino
-
-forMin = 0
-forMax = 0
-revMin = 0
-revMax = 0
-
-motParam = [revMin, revMax, forMin, forMax]
-motLabel = ['Min Reverse ', 'Max Reverse ','Min Forward ','Max Forward ']
+motParam = [min_throttle, max_throttle, num_mot,]
+motLabel = ['Min throttle ', 'Max throttle ', 'Motors ']
 
 serRight = 0
 serCentre = 0
 serLeft = 0
+str_pos = 30
+pan_pos = 90
 
 servoParam = [serCentre, serLeft, serRight]
 servoLabel = ['Centre ','Max left ','Max right ']
 
-pos = 30
-speed = 0
+
+
 run_time = 0 #Just a place holder for a counter yet to be implemented
 arc_time = 1945 #todo time for the servo to swing 60 degree in microseconds (more use for automation rather than in manual mode)
 func = 0
 
 speedLock = 0
 
+# Serial Port detection and configuration
+
 myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
 print (myports)
 
-#Configure active serial port
+arduLink = '/dev/ttyS1'
+
 for port in myports:
     if '/dev/ttyACM0' in port:
         arduLink = '/dev/ttyACM0'
-        print("ACM device found - Most likely Arduino UNO")
+        print("ACM device found - Most likely Arduino UNO") # Could also be any other AVR device
     elif '/dev/ttyUSB0' in port:
         arduLink = '/dev/ttyUSB0'
         print("USB device found - Most likely Nano/clone")
-
         
 piComm = serial.Serial(arduLink,19200,timeout = 2)
 piComm.flush()
 
-# Admittedly this is probably not the most efficient way of doing things, I will look for a better way
-# in the future but for now it should work for simply retrieving motor parameters from the Arduino
-motor = piComm.readline().decode('utf-8').lstrip('Motor: ') # Firstly read back motor configuration from Arduino
+motor = piComm.readline().decode('utf-8').lstrip('Motor: ') # The first string sent will contain the motor data as defined in the Arduino setup function
 motData = motor.split(",")
 print("Motor Configuration: ")
 for m in range(len(motData)):
     motParam[m] = int(motData[m])
     print(motLabel[m] + str(motData[m])) #Print back the retrieved value
 
-servo = piComm.readline().decode('utf-8').lstrip('Servo: ') # Second read back servo parameters from Arduino
+servo = piComm.readline().decode('utf-8').lstrip('Servo: ') # The second string will contain the Servo constraints
 servoData = servo.split(",")
 print("Servo configuaration: ")
 for s in range(len(servoData)):
     servoParam[s] = int(servoData[s])
     print(servoLabel[s] + str(servoData[s]))
     
-#ensure values are actually set, doesnt quite work the same way as arduino, not the best way to do #things but should work
-
-revMin, revMax, forMin, forMax = [motParam[i] for i in [0 , 1, 2, 3]]
+min_throttle, max_throttle, num_mot = [motParam[i] for i in [0 , 1, 2]]
 serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
-
-#
-# URI handlers - all the bot page actions are done here
-#
-#
-
 
 
 # Data processing functions
 
-def transmit():
-    toSend = (','.join(PiCommand) + '\n')
-    piComm.write(toSend.encode('utf-8'))
+def transmit(data1, data2, data3):
+    
+    PiCommand = [str(data1),str(data2),str(data3),]
+    outGoing = (','.join(PiCommand) + '\n')
+    piComm.write(outGoing.encode('utf-8'))
 
 def recieve():
-    toRecieve = piComm.readline().decode('utf-8').rstrip()
-    recieveData = toRecieve.split(",")
+    incoming = piComm.readline().decode('utf-8').rstrip()
+    recievedData = incoming.split(",")
+
+    return recievedData
+
+    #Once the dash board is working we can move onto processing incoming data
 
 
+def go_forward():
+   global throttle, direction, profile
 
-def go_forward(): # Motor drive functions
-    global speed
+   if throttle == 0 or throttle < min_throttle:
 
-    if speed == 0 or speed < forMin:
+      throttle = 170
 
-      speed = speed + 180
-      #need to add a better means to deal with different speed profiles
+   if direction != True and throttle > min_throttle:
 
-def go_backward():
-    global speed
+      stop()
+      
+      direction = True
 
-    if speed == 0 or speed > revMax:
+      throttle = profile
 
-      speed = speed - 180
+   return direction
+
+def go_reverse():
+   global throttle, direction, profile
+
+   if throttle == 0 or throttle < min_throttle:
+
+      throttle = 170
+
+   if direction != False and throttle > min_throttle:
+
+      stop()
+
+      direction = False
+
+      throttle = profile
+
+   return direction
 
         
-def sw_left(): # Servo steering functions
-    global dri_servo
+def sw_left(): 
+    global str_pos
 
-    if dri_servo > serLeft:
-      dri_servo -= 5
+    if str_pos > serLeft:
+      str_pos -= 5
    
-    #place serial command for turning left
+    
         
 def sw_right():
-    global dri_serv
+    global str_pos
 
-    if dri_servo < serRight:
+    if str_pos < serRight:
 
-      dri_serv += 5
+      str_pos += 5
 
     #place serial command for turning right
 
 def reset():
-    reset = ['0','30','0']
+    reset = ['0','0','30']
     transmit()
 
 def stop():
-    stopping = ['0',str(pos),'0',]
+    stopping = ['0','0',str(str_pos),]
     transmit()
+
+def run_timer(interval):
+
+   time.sleep(interval)
 
 
 # Core movement controls 
@@ -154,14 +175,18 @@ def index( ):
    return render_template('index.html', name = None)
 
 @app.route("/forward")
-def forward( ):
-   global run_time
+def forward():
+   global run_time, func
 
    print("Forward")
 
-   go_forward()
+   func=go_forward()
 
-   if run_time > 0:  # If not continuous, then  stop after delay
+   # Need a better alternative to sleep which freezes controls
+
+   # Ideally if we implemented some kind of time it would allow us to steer while moving
+
+   if time_limit == True:  # If not continuous, then  stop after delay
 
       time.sleep(0.100 + run_time) # sleep 100ms + run_time
 
@@ -170,14 +195,14 @@ def forward( ):
    return "ok"
 
 @app.route("/backward")
-def backward( ):
-   global run_time
+def reverse():
+   global run_time, func
 
    print("Backward")
 
-   go_backward()
+   func=go_reverse()
    
-   if run_time > 0: # If not continuous, then   stop after delay
+   if time_limit == True: # If not continuous, then   stop after delay
 
       time.sleep(0.100 + run_time) # sleep 100ms + run_time
 
@@ -192,10 +217,9 @@ def left():
    print("Left")
    sw_left()
    
-   time.sleep(0.500 - turn_offset) # sleep @1/2 second
+   # Keep it simple for now but we may later decide to include an offset for the time it takes the servo to get into position
+   time.sleep(0.05) # sleep @1/2 second
    
-   stop()
-   time.sleep(0.100)
    return "ok"
 
 @app.route("/right")
@@ -205,115 +229,111 @@ def right():
    print("Right")
    sw_right()
 
-   time.sleep(0.500 - turn_offset) # sleep @1/2 second - need to adjust for servp
+   time.sleep(0.05) # sleep @1/2 second - need to adjust for servo
 
-   stop() # stop
-   time.sleep(0.100)
    return "ok"
 
 @app.route("/stop")
 def stop():
-   global last_direction
 
    print("Stopping")
    stop()
 
-   time.sleep(0.100) # sleep 100ms
+   time.sleep(0.1) # sleep 100ms
    return "ok"
 
-# Speed profiles, 3 preset speeds with a later goal being to implement a slide bar control to increase flexibility
-# over the over
+# Throttle/PWM level, Currently configured as 3 preset values with a later goal being to implement a slide bar 
+# for more fine grained control.
 
 @app.route("/speed_low")
 def speed_low():
-   global speed, turn_offset
+   global throttle, turn_offset, profile
 
-   speed = 100
+   throttle = 100
+   profile = throttle
    turn_offset = 0.001
    time.sleep(0.150)
    return "ok"
 
 @app.route("/speed_mid")
 def speed_mid():
-   global speed, turn_offset
+   global throttle, turn_offset, profile
 
-   speed = 170
-   turn_tm_offset = 0.166   
-   time.sleep(0.150)
+   throttle = 170
+   profile = throttle
+   turn_offset = 0.166   
    return "ok"
 
 @app.route("/speed_hi")
 def speed_hi():
-   global speed, last_direction, turn_offset
+   global throttle, turn_offset, profile
 
-   speed = 245
+   throttle = 245
+   profile = throttle
    turn_offset = 0.332
-   time.sleep(0.150)
    return "ok"
 
 # Run time - a counter for controlling the duration for which the rover moves, again the implements a set of predefined speeds that range from 'short' to
-# continous where the couter is disabled and the motors will keep on running unless a stop command is sent 
+# continous where the counter is disabled and the motors will keep on running unless a stop command is sent 
 
 @app.route("/continuous") #running duration
 def continuous():
-   global run_time
+   global run_time, time_limit
 
    print("Continuous run")
-   run_time = 0
-   time.sleep(0.100) # sleep 100ms
+   time_limit = False
+   
    return "ok"
 
 @app.route("/mid_run")
 def mid_run():
-   global run_time
+   global run_time, time_limit
 
    print("Mid run")
    run_time = 0.750
-   stop()
-   time.sleep(0.100) # sleep 100ms
+   time_limit = True
+
    return "ok"
 
 @app.route("/short_time")
 def short_time():
-   global run_time
+   global run_time, time_limit
 
    print("Short run")
    run_time = 0.300
-   stop()
-   time.sleep (0.100) # sleep 100ms
+   time_limit = True
+   
    return "ok"
 
-
-
-# All Camera related controls (dummy not yet implemented):
+# All Camera related controls (Stub yet to be implemented):
 
 @app.route("/panlt") #Cam Servo control functions
 def panlf( ):
-   global pan_serv
+   global pan_pos
 
    print("Panlt")
-   pan_serv += 5
-   if pan_serv < 135:
-      pan_serv = 135
+   pan_pos += 5
+   if pan_pos < 135:
+      pan_pos = 135
 
    time.sleep(0.150) # sleep 150ms
    return "ok"
 
 @app.route("/panrt")
 def panrt():
-   global pan_serv
+   global pan_pos
 
    print("Panrt")
-   pan_serv -= 5
-   if pan_serv > 45:
-      pan_serv = 45
+   pan_pos -= 5
+   if pan_pos > 45:
+      pan_pos = 45
 
    time.sleep(0.150) # sleep 150ms
    return "ok"
 
 @app.route ("/home")
 def home():
-   global pan_serv
+   global pan_pos
 
    print("Home")
 
@@ -322,7 +342,7 @@ def home():
 
 @app.route("/panfull_lt")
 def panfull_lt():
-   global pan_serv
+   global pan_pos
 
    print("Pan full left")
 
@@ -331,7 +351,7 @@ def panfull_lt():
 
 @app.route("/panfull_rt")
 def panfull_rt():
-   global pan_serv
+   global pan_pos
 
    print ("Pan full right")
 
@@ -339,8 +359,12 @@ def panfull_rt():
    return "ok"
 
 
-PiCommand = [str(speed),str(pos),str(func)] #functions are work in progress so stub for now
-transmit()
+# This needs to be sent periodically in a way that does not block the rest of the script
+
+transmit(func, throttle, str_pos)
+
+#check_timer()
+
 #recieve() - need to add once I find a way to forward the measurements onto the webpage
 
 if __name__ == "__main__" :
