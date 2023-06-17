@@ -5,6 +5,14 @@
 
    Original by Scott Beasley, Modified by Ryzer
 
+   Current a wip
+
+   Basic motion control works but can be enhance by a feedback mechnasim
+   that lets the user know the speed the rover is travelling at based on
+   the profile selected and the current postion. In addtion it will be
+   nicer to replace the radio buttons for throttle control with a range
+   once the appropriate javascript is in place to deal with this   
+
    Free to use or modify. Enjoy!
 -->
 <html>
@@ -78,10 +86,11 @@ function keypressed (event) {
 </script>
 </head>
 <body>
+	<div>
 	<centre>
-		Rover Control Center V1.5
+		<h1>Rover Control Center V1.5</h1>
 	</centre>
-	<font face="Arial"></font>
+	</div>
 	
 	<!---
 	
@@ -98,117 +107,133 @@ function keypressed (event) {
 		
 		<button class="button function">Mic</button>
 		Option to stream audio input from the webcam's microphone
-		
-		A feedback mechanism to report back a value for the speed of the motor
-		
-		Identification of the current servo/steering position
-		
-	</div
-		
-		
-		
-		<div class="slidecontainer">
-		Throttle
-		<input type="range" min="0" max="250" value="10" class="slider" id="Throttle">
-	</div>
 
-	<div class = "read_outs">
-
-		Either create text boxes or maybe use janja2 as part flask to show variables
-
-	</div>
-	
 	-->
-	
-	<div class = "dirPanel">
 
-		<h1>Motion:</h1>
+	<div class = "container">
+
+		<div class = "control-panel">
+		
+			<div class = "read_outs">
+
+				{% if direction == True %}
+
+					Moving forward
+
+				{% else %}
+
+					Moving in reverse
+
+				Throttle: {{throttle}} Turn: {{str_pos}}
+
+			</div>
+	
+			<div>
+
+				<h2>Motion:</h2>
       
-		<button type="button" class="forward dir-buttons" name="forward" value="0" id="forward">Forward
-		<input type="image" src="./static/forward.png" id="imgforward"
-        onclick="sendMotion ('forward');"/>
+				<button type="button" class="forward dir-buttons" name="forward" value="0" id="forward">Forward
+				<input type="image" src="./static/forward.png" id="imgforward"
+        		onclick="sendMotion ('forward');"/></button>
          
-		<button type="button" class="right dir-buttons" name="rtforward" value="0" id="right">Right
-		<input type="image" src="./static/right.png"
-		id="imgRtforward" onclick="sendMotion ('right');"/></button>
+				<button type="button" class="right dir-buttons" name="rtforward" value="0" id="right">Right
+				<input type="image" src="./static/right.png"
+				id="imgRtforward" onclick="sendMotion ('right');"/></button>
      		
-		<button type="button" class="em-stop dir-buttons" name="stop" value="0" id="stop">Stop
-		<input type="image" src="./static/stop.png" id="imgstop"
-		onclick="sendMotion ('stop');"/></button>
+				<button type="button" class="em-stop dir-buttons" name="stop" value="0" id="stop">Stop
+				<input type="image" src="./static/stop.png" id="imgstop"
+				onclick="sendMotion ('stop');"/></button>
 				
-		<button type="button" class="left dir-buttons" name="left" value="0" id="left">Left
-		<input type="image" src="./static/left.png" id="imgleft"
-		onclick="sendMotion ('left');"/></button>        
+				<button type="button" class="left dir-buttons" name="left" value="0" id="left">Left
+				<input type="image" src="./static/left.png" id="imgleft"
+				onclick="sendMotion ('left');"/></button>        
 		
-		<button type="button" class="reverse dir-buttons" name="backward" value="0" id="backward">Reverse
-		<input type="image" src="./static/backward.png" id="imgbackward"
-		onclick="sendMotion ('backward');"/></button>
-	  
-	</div>
+				<button type="button" class="reverse dir-buttons" name="backward" value="0" id="backward">Reverse
+				<input type="image" src="./static/backward.png" id="imgbackward"
+				onclick="sendMotion ('backward');"/></button>
+
+			</div>
 	
-	<div class = "throttle-param">
+			<div class = "throttle-param">
 
-		<centre>
+				<h2>Throttle:</h2>
+			
+				<centre>
 
-			<input type="radio" name="speed" value="42" id="speed_low"
-			onclick="sendMotion ('speed_low');"/>Low throttle
+					<input type="radio" name="speed" value="42" id="speed_low"
+					onclick="sendMotion ('speed_low');"/>Low throttle
 
-			<input type="radio" name="speed" value="84" id="speed_mid"
-			onclick="sendMotion ('speed_mid');" checked/>Mid throttle
+					<input type="radio" name="speed" value="84" id="speed_mid"
+					onclick="sendMotion ('speed_mid');" checked/>Mid throttle
 		
-			<input type="radio" name="speed" value="126" id="speed_hi"
-			onclick="sendMotion ('speed_hi');">High throttle
+					<input type="radio" name="speed" value="126" id="speed_hi"
+					onclick="sendMotion ('speed_hi');"/>High throttle
 
-		</centre>
+					<!--
+						Todo
+						change over to a range bar for mine fine grained control
+					-->
+
+				</centre>
 	
-	</div>
+			</div>
 		
-	<div class="run-duration">
+			<div>
 
-		<centre>
+				<h2>Run time:</h2>
 
-			<input type="radio" name="run_time" value="42" id="short_time"
-			onclick="sendMotion ('short_time');"/>Short run
+				<centre>
+
+					<input type="radio" name="run_time run-duration" value="42" id="short_time"
+					onclick="sendMotion ('short_time');"/>Short run
          
-			<input type="radio" name="run_time" value="84" id="mid_run"
-			onclick="sendMotion ('mid_run');" checked/>Med run
+					<input type="radio" name="run_time run-duration" value="84" id="mid_run"
+					onclick="sendMotion ('mid_run');" checked/>Med run
 		
-			<input type="radio" name="run_time" value="126" id="continuous"
-			onclick="sendMotion ('continuous');"/>Continuous
+					<input type="radio" name="run_time run-duration" value="126" id="continuous"
+					onclick="sendMotion ('continuous');"/>Continuous
 
-		</centre>
+				</centre>
 		
-	</div>
-	
-	<div class="feed">
-	
-		<img src="localhost:8080/?action=stream" alt="Feed Offline">
-	
-	</div>
+			</div>
 
-	<div class = "camPanel">
+		</div>
+	
+		<div class = "cam-panel">
 		
-		<button type="button" class="pan-left cam-buttons" name="panlt" id="panlt">
-		<input type="image" src="./static/1leftarrow.png"
-		id="imgpanlt" onclick="sendMotion ('panlt');"
-		onkeypress="keypressed (event);"/>
+			<div class="feed">
+	
+				<img src="localhost:8080/?action=stream" alt="Feed Offline">
+	
+			</div>
+
+			<div>
 		
-		<button type="button" class="pan-right cam-buttons" name="panrt" id="panrt">
-		<input type="image" src="./static/1rightarrow.png"
-		id="imgpanrt" onclick="sendMotion ('panrt');"/>
+				<button type="button" class="pan-left cam-buttons" name="panlt" id="panlt">
+				<input type="image" src="./static/1leftarrow.png"
+				id="imgpanlt" onclick="sendMotion ('panlt');"
+				onkeypress="keypressed (event);"/>
+		
+				<button type="button" class="pan-right cam-buttons" name="panrt" id="panrt">
+				<input type="image" src="./static/1rightarrow.png"
+				id="imgpanrt" onclick="sendMotion ('panrt');"/>
         
-        <button type="button" class="pan-home cam-buttons" name="homecam" id="homecam">Home
-        <input type="image" src="./static/gohome.png"
-        id="imghome" onclick="sendMotion ('home');"/>
+        		<button type="button" class="pan-home cam-buttons" name="homecam" id="homecam">Home
+        		<input type="image" src="./static/gohome.png"
+        		id="imghome" onclick="sendMotion ('home');"/>
         
-        <button class="pan-left-full cam-buttons" name="panfull_lt" id="panfull_lt">
-        <input type="image" src="./static/arrow-left-double.png"
-        id="imgpanall_lt" onclick="sendMotion ('panfull_lt');"
-        onkeypress="keypressed (event);"/>
+        		<button class="pan-left-full cam-buttons" name="panfull_lt" id="panfull_lt">
+        		<input type="image" src="./static/arrow-left-double.png"
+        		id="imgpanall_lt" onclick="sendMotion ('panfull_lt');"
+        		onkeypress="keypressed (event);"/>
 		
-        <button class="pan-right-full cam-buttons" name="panfull_rt" id="panfull_rt">
-        <input type="image" src="./static/arrow-right-double.png"
-        id="imgpanall_rt" onclick="sendMotion ('panfull_rt');"/>
+        		<button class="pan-right-full cam-buttons" name="panfull_rt" id="panfull_rt">
+        		<input type="image" src="./static/arrow-right-double.png"
+        		id="imgpanall_rt" onclick="sendMotion ('panfull_rt');"/>
+
+			</div>
+		
+		</div>
 
 	</div>
    

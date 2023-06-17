@@ -1,4 +1,14 @@
-.dirPanel{
+.container{
+	 display: flex;
+	 flex-flow: row wrap;
+	 justify-content: space-around;
+}
+
+.container > * {
+	flex: 100%;
+}
+
+.control-panel{
 
 	position: absolute;	
 	top: 60px;
@@ -64,95 +74,13 @@
 	
 }
 
-.camPanel{
-	
-	position: absolute;
-	bottom: 40px;
-	left:110px;
-
-}
-
-.cam-buttons{
-	
-	background-color: #008CBA; /*Green*/
-	border: none;
-	color: white;
-	position: relative;
-	height: 60px;
-	width: 60px;
-	align-items: center;
-	text-decoration: none;
-	display: inline-block;
-	font-size: 20px;
-
-}
-
-.pan-left-full{
-	
-	left: -20px;
-	
-}
-
-.pan-left{
-	
-	left: 225px;
-	
-}
-
-.pan-home{
-
-	bottom: 26px;
-	left: 170px;
-
-}
-
-.pan-right {
-	
-	left:295px;
-	
-}
-
-.pan-right-full{
-	
-	left:180px;
-}
-
 .throttle-param{
 
 	position: absolute;
 	right: 30px;
-	top: 800px;
+	bottom: -300px;
 	list-style: none;
-
 	
-}
-
-.run-duration{
-
-	position: absolute;
-	right: 30px;
-	top: 1000px;
-	list-style: none;
-
-
-}
-
-.feed{
-	
-	position: absolute;
-	left: 150px;
-
-}
-
-.speed-param{
-	
-	position: absolute;
-	right: 30px;
-	bottom: 260px;
-	text-align: center;
-	list-style: none;
-	display: inline-block;
-
 }
 
 .go-slow{
@@ -190,46 +118,100 @@
 
 .run-duration{
 	
-	position: absolute;
-	right: 30px;
-	bottom: 200px;
+	position: relative;
+	display: inline-block;
+	right: 70px;
+	top: 200px;
+	width: 100px;
 	list-style: none;
 	
 }
 
-.short-time{
+.short-run{
 	
-	position: relative;
-	display: inline-block;
 	text-align: center;
-	width: 60px;
-	bottom: 20px;
 	right: 50px;
 	
 }
 
-.mid-time{
+.medium-run{
 	
-	position: relative;
-	display: inline-block;
 	text-align: center;
-	width: 60px;
-	bottom: 20px;
 	right: 50px;
-	
 	
 }
 
-.constant-run{
+.contious{
 	
-	position: relative;
-	display: inline-block;
 	text-align: center;
-	width: 60px;
-	bottom: 20px;
 	right: 50px;
-	
 	
 }
 
+.cam-panel{
+	
+	position: absolute;
+	bottom: 140px;
+	left:110px;
 
+}
+
+.cam-buttons{
+	
+	background-color: #00ba44; /*Green*/
+	border: none;
+	color: white;
+	position: relative;
+	height: 60px;
+	width: 60px;
+	align-items: center;
+	text-decoration: none;
+	display: inline-block;
+	font-size: 20px;
+
+}
+
+.pan-left-full{
+	
+	left: -40px;
+	
+}
+
+.pan-left{
+	
+	left: 150px;
+	
+}
+
+.pan-home{
+
+	position: absolute;
+	left: 220px;
+
+}
+
+.pan-right {
+	
+	left:230px;
+	
+}
+
+.pan-right-full{
+	
+	left:260px;
+
+}
+
+.feed{
+	
+	position: absolute;
+	background-color: #000000; /*Black*/
+	height: 480px;
+	width: 640px;
+	color: white;
+	left: 150px;
+	text-align: centre;
+	font-size: 150px;
+	top: -700px;
+
+}
