@@ -97,11 +97,14 @@ void setup() {
   //  //needed for leonardo or similiar  
   //}
   
-  Serial.print("Motor: ");
-  Serial.print(MIN_THROTTLE); Serial.print(","); // Inform the SBC what the operating parameters are
-  Serial.print(MAX_THROTTLE); 
+  // Pass on to the  SBC what the hardware operational constraints are
 
-  Serial.print("; Servo: ");
+  Serial.print("Motor: ");
+  Serial.print(MIN_THROTTLE); Serial.print(","); 
+  Serial.print(MAX_THROTTLE); Serial.print(",");
+  Serial.print(1); Serial.print("; "); //How many motors are attached, 1 = Rack and pinion 2 = differential steer
+
+  Serial.print("Servo: ");
   Serial.print(CENTRE); Serial.print(",");
   Serial.print(MAX_LEFT); Serial.print(",");
   Serial.println(MAX_RIGHT);
