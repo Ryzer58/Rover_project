@@ -21,9 +21,10 @@ import digitalio
 
 min_throttle = 0
 max_throttle = 0
+mot_count = 0
 mot_dir = 0
-motParam = [min_throttle, max_throttle]
-motLabel = ['Min throttle ', 'Max throttle ']
+motParam = [min_throttle, max_throttle, mot_count]
+motLabel = ['Min throttle ', 'Max throttle ', 'Motors connected']
 throttle = 0
 
 servo_right = 0
@@ -160,7 +161,7 @@ for s in range(len(servoData)):
     servoParam[s] = int(servoData[s])
     print(servoLabel[s] + str(servoData[s]))
 
-min_throttle, max_throttle = [motParam[i] for i in [0 , 1]]
+min_throttle, max_throttle, mot_count = [motParam[i] for i in [0 , 1, 2]]
 servo_centre, servo_left, servo_right = [servoParam[n] for n in [0, 1, 2]]
 
 def coreData():
@@ -365,14 +366,14 @@ try:
                     fwd_lamp.value = False
                 rev_lamp.value = True
 
-        elif keyp == 'd' or ord(keyp) == 19:
+        elif keyp == 'd' or ord(keyp) == 18:
             print('Turning right:', end=' ')
             if pos < servo_right:
                 pos = pos + 5
                 bearing = bearing + 5
             if pos < servo_centre:
                 print('by 5 deg now left at ' + str(abs(bearing)))
-            if pos == servo_centre:
+            elif pos == servo_centre:
                 print('steering returned to centre')
             else:
                 print('now at ' + str(bearing))
@@ -382,14 +383,14 @@ try:
                 lft_lamp.value = True
             
 
-        elif keyp == 'a' or ord(keyp) == 18:
+        elif keyp == 'a' or ord(keyp) == 19:
             print('Turning left:', end=' ')
             if pos > servo_left:
                 pos = pos - 5
                 bearing = bearing - 5
             if pos > servo_centre:
                 print('by 5 deg now right at ' + str(bearing))
-            if pos == servo_centre:
+            elif pos == servo_centre:
                 print('steering returned to centre')
             else:
                 print('now at ' + str(abs(bearing)))
