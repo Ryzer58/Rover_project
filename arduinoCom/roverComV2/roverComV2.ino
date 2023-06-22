@@ -14,16 +14,16 @@
 
 #include <Servo.h>
 #include <NewPing.h>
-//#include <Wire.h> //TODO BNO055
+// #include <Wire.h> //TODO BNO055
 
 
 uint8_t control = 0;
 uint8_t func = 0;
 
-/* Vellemen KA04 motor shield configuration - A stackable dual motor shield. It requires two pins 
- * to drive a single motor, one for setting the direction and the other to drive PWM output.
- * Arduino pins used are configured by jumpers placed on the board headers. Each of the pins
- * avaliable to control channel A or B are listed below.
+/* Vellemen KA04 motor shield configuration - A stackable dual motor driver shield based 
+ * around the L298P. Each channel requires 2 pins to operate. Pins are selectable by
+ * positioning pin jumpers with to match with the pin number used for the sketch. The
+ * available pins for each channel are included in the coments below.
  * 
  */
 
@@ -45,33 +45,35 @@ bool new_data;
 
 /*------------------------------------------------------------------------------------------
  * SG995 Servo configuration - Ensure that the servo arc does not exceed the physical
- * constraints of the frame to any damaging the servo. In future I may add an addtional 
- * servo to act as pan mechanism for the camera used on the SBC
+ * constraints of the frame to any damaging the servo. The current frame has the Servo
+ * mounted directly above the pivot mechanism. Depending how exactly the Servo is orientated 
+ * may mean that the values for right and left may need to be switched. In future an addtional 
+ * servo may be added to enable panning of the SBC connected camera.
  * 
  */
 
-Servo str;               //Main steering servo,
+Servo str;              
 const uint8_t CENTRE = 30;
-const uint8_t MAX_LEFT = 0;       //Left and Right may need to swapped based on the orientation
-const uint8_t MAX_RIGHT = 60;     //of the servo
+const uint8_t MAX_LEFT = 0;    
+const uint8_t MAX_RIGHT = 60;
 uint8_t cur_ang = CENTRE;    //Start at center point
-//#define pivot_time = 12; //Time taken for servo to do a an arc of 60 degrees in nanoseconds
+//#define pivot_time = 12;   //Time taken for servo to do a an arc of 60 degrees in nanoseconds
 
 
 /*------------------------------------------------------------------------------------------
- * HC-SR04 - Ultrasonic sensor configuration - To use will carry out inital tests while
- * indoors. See sensors tab for more detailed configuration.
- * surrounding environment. The end goal is to use 6 sensor, an array of 3 forward and back
- * 
- * 
+ * HC-SR04 - Ultrasonic sensor configuration - These are currently our only method for detecting 
+ * objects. They are ideal for indoors but no great for going outside, further alterations will
+ * most likely need to made to the structure before outdoor exploration is attempted. There are
+ * two sensor clusters, one at the back and the other at the front. Each cluster contains 3
+ * HC-SR04. 
  * 
  */
  
-#define SONAR_NUM     3   // Number or sensors.
-#define MAX_DISTANCE 200  // Maximum distance (in cm) to ping.
-#define MIN_UPPER 5       //Define a band at which to stop
+#define SONAR_NUM     3     // Number or sensors.
+#define MAX_DISTANCE 200    // Maximum distance (in cm) to ping.
+#define MIN_UPPER 5         //Define a band at which to stop
 #define MIN_LOWER 2
-uint8_t act_sensor = 0;               // Keeps track of which sensor is active.
+uint8_t act_sensor = 0;     // Keeps track of which sensor is active.
 
 
 /*------------------------------------------------------------------------------------------
@@ -93,16 +95,16 @@ void setup() {
   //intialise_sensors(); //TODO - to be used when working with a sensor array
   
   Serial.begin(19200);
-  //while(!Serial){
-  //  //needed for leonardo or similiar  
-  //}
   
-  // Pass on to the  SBC what the hardware operational constraints are
+  //while(!Serial);
+    //needed for leonardo or similiar  
+  
+  // Pass on to the SBC what the hardware operational constraints are
 
   Serial.print("Motor: ");
   Serial.print(MIN_THROTTLE); Serial.print(","); 
   Serial.print(MAX_THROTTLE); Serial.print(",");
-  Serial.print(1); Serial.print("; "); //How many motors are attached, 1 = Rack and pinion 2 = differential steer
+  Serial.print(1); Serial.print("; "); //How many motors are attached, 1 = Rack and pinion 2 = differential steering
 
   Serial.print("Servo: ");
   Serial.print(CENTRE); Serial.print(",");
@@ -116,9 +118,9 @@ void loop() {
   while(Serial.available() > 0){
     
     //sent in format: inFunc, in_velocity, inAng - TODO communications need a major reworking 
-    uint8_t in_func = Serial.parseInt(); // Input functiom, for now just repurpose as directional control rather than being unused
+    uint8_t in_func = Serial.parseInt();      // Input functiom, for now just repurpose as directional control rather than being unused
     uint8_t in_throttle = Serial.parseInt();  // Input velocity, combining speed and direction as in the variables defined above
-    uint8_t in_ang = Serial.parseInt();  // Input angle for the steering servo
+    uint8_t in_ang = Serial.parseInt();       // Input angle for the steering servo
     
 
     // look for the newline. That's the end of your sentence:
@@ -208,8 +210,8 @@ void loop() {
     }
   }
 
-  scanning();  // Currently only supports single sensor in either direction
-  //batt_check(); // Currently disabled
+  scanning();
+  //batt_check(); // Not yet implemented
 
 }
 

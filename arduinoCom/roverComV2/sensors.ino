@@ -133,7 +133,7 @@ void scanning(){
    * 
    */
 
-  if(incoming_data){
+  if(incoming_data  == true){
 
     check_time = millis();
 
@@ -150,7 +150,6 @@ void scanning(){
 
     }
   }
-
 }
 
 //TODO - BNO055 9DOF module data processing for advance decision
