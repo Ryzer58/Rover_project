@@ -16,9 +16,10 @@
 import sys
 import time
 import serial
+from serial.tools import list_ports
 from flask import Flask, render_template, request
 
-app = Flask (__name__, static_url_path = '')
+app = Flask (__name__, template_folder='web-app', static_folder='web-app/static')
 
 # Rover operating parameters to be populated by information collected from Arduino like that used in the intial
 # cli based program
@@ -42,15 +43,14 @@ pan_pos = 90
 servoParam = [serCentre, serLeft, serRight]
 servoLabel = ['Centre ','Max left ','Max right ']
 
-
-
 run_time = 0 #Just a place holder for a counter yet to be implemented
 arc_time = 1945 #todo time for the servo to swing 60 degree in microseconds (more use for automation rather than in manual mode)
 func = 0
 
 speedLock = 0
 
-# Serial Port detection and configuration
+
+# Serial Port detection and configuration - First look for available devices (Still need to add proper error handling system)
 
 myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
 print (myports)
@@ -60,23 +60,26 @@ arduLink = '/dev/ttyS1'
 for port in myports:
     if '/dev/ttyACM0' in port:
         arduLink = '/dev/ttyACM0'
-        print("ACM device found - Most likely Arduino UNO") # Could also be any other AVR device
+        print("ACM device found - Most likely Arduino UNO")
     elif '/dev/ttyUSB0' in port:
         arduLink = '/dev/ttyUSB0'
         print("USB device found - Most likely Nano/clone")
         
 piComm = serial.Serial(arduLink,19200,timeout = 2)
 piComm.flush()
+piComm.readline().decode('utf-8')
+piComm = piComm.split("; ")
+motor_range, servo_range = piComm
 
-motor = piComm.readline().decode('utf-8').lstrip('Motor: ') # The first string sent will contain the motor data as defined in the Arduino setup function
-motData = motor.split(",")
+motor_range.lstrip('Motor: ') # The first string sent will contain the motor data as defined in the Arduino setup function
+motData = motor_range.split(",")
 print("Motor Configuration: ")
 for m in range(len(motData)):
     motParam[m] = int(motData[m])
     print(motLabel[m] + str(motData[m])) #Print back the retrieved value
 
-servo = piComm.readline().decode('utf-8').lstrip('Servo: ') # The second string will contain the Servo constraints
-servoData = servo.split(",")
+servo_range = servo_range.lstrip('Servo: ') # The second string will contain the Servo constraints
+servoData = servo_range.split(",")
 print("Servo configuaration: ")
 for s in range(len(servoData)):
     servoParam[s] = int(servoData[s])
@@ -192,7 +195,7 @@ def forward():
 
       stop()
 
-   return "ok"
+   return render_template('index.html', direction, throttle)
 
 @app.route("/backward")
 def reverse():
@@ -208,7 +211,7 @@ def reverse():
 
       stop()
 
-   return "ok"
+   return render_template('index.html', direction, throttle)
 
 @app.route("/left")
 def left():
@@ -220,7 +223,7 @@ def left():
    # Keep it simple for now but we may later decide to include an offset for the time it takes the servo to get into position
    time.sleep(0.05) # sleep @1/2 second
    
-   return "ok"
+   return render_template('index.html', str_pos)
 
 @app.route("/right")
 def right():
@@ -231,7 +234,7 @@ def right():
 
    time.sleep(0.05) # sleep @1/2 second - need to adjust for servo
 
-   return "ok"
+   return render_template('index.html', str_pos)
 
 @app.route("/stop")
 def stop():
@@ -240,7 +243,9 @@ def stop():
    stop()
 
    time.sleep(0.1) # sleep 100ms
-   return "ok"
+   
+   return render_template('index.html')
+
 
 # Throttle/PWM level, Currently configured as 3 preset values with a later goal being to implement a slide bar 
 # for more fine grained control.
@@ -253,7 +258,9 @@ def speed_low():
    profile = throttle
    turn_offset = 0.001
    time.sleep(0.150)
-   return "ok"
+
+   return render_template('index.html', throttle)
+   
 
 @app.route("/speed_mid")
 def speed_mid():
@@ -262,7 +269,9 @@ def speed_mid():
    throttle = 170
    profile = throttle
    turn_offset = 0.166   
-   return "ok"
+   
+   return render_template('index.html', throttle)
+
 
 @app.route("/speed_hi")
 def speed_hi():
@@ -271,7 +280,8 @@ def speed_hi():
    throttle = 245
    profile = throttle
    turn_offset = 0.332
-   return "ok"
+   
+   return render_template('index.html',throttle)
 
 # Run time - a counter for controlling the duration for which the rover moves, again the implements a set of predefined speeds that range from 'short' to
 # continous where the counter is disabled and the motors will keep on running unless a stop command is sent 
@@ -283,7 +293,7 @@ def continuous():
    print("Continuous run")
    time_limit = False
    
-   return "ok"
+   return render_template('index.html', run_time)
 
 @app.route("/mid_run")
 def mid_run():
@@ -293,7 +303,7 @@ def mid_run():
    run_time = 0.750
    time_limit = True
 
-   return "ok"
+   return render_template('index.html', run_time)
 
 @app.route("/short_time")
 def short_time():
@@ -303,9 +313,9 @@ def short_time():
    run_time = 0.300
    time_limit = True
    
-   return "ok"
+   return render_template('index.html', run_time)
 
-# All Camera related controls (Stub yet to be implemented):
+# All Camera related controls (Yet to be implemented):
 
 @app.route("/panlt") #Cam Servo control functions
 def panlf( ):
@@ -317,7 +327,8 @@ def panlf( ):
       pan_pos = 135
 
    time.sleep(0.150) # sleep 150ms
-   return "ok"
+   
+   return render_template('index.html')
 
 @app.route("/panrt")
 def panrt():
@@ -329,7 +340,8 @@ def panrt():
       pan_pos = 45
 
    time.sleep(0.150) # sleep 150ms
-   return "ok"
+   
+   return render_template('index.html')
 
 @app.route ("/home")
 def home():
@@ -338,7 +350,8 @@ def home():
    print("Home")
 
    time.sleep(0.150) # sleep 150ms
-   return "ok"
+  
+   return render_template('index.html')
 
 @app.route("/panfull_lt")
 def panfull_lt():
@@ -347,7 +360,8 @@ def panfull_lt():
    print("Pan full left")
 
    time.sleep (0.150) # sleep 150ms
-   return "ok"
+   
+   return render_template('index.html')
 
 @app.route("/panfull_rt")
 def panfull_rt():
@@ -356,7 +370,8 @@ def panfull_rt():
    print ("Pan full right")
 
    time.sleep(0.150) # sleep 150ms
-   return "ok"
+   
+   return render_template('index.html')
 
 
 # This needs to be sent periodically in a way that does not block the rest of the script
@@ -368,4 +383,4 @@ transmit(func, throttle, str_pos)
 #recieve() - need to add once I find a way to forward the measurements onto the webpage
 
 if __name__ == "__main__" :
-   app.run (host = '0.0.0.0', port = 80, debug = True)
+   app.run (host = '0.0.0.0', port = 5000, debug = True)
