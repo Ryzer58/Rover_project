@@ -21,14 +21,14 @@
 	<title>Raspberry Pi web controller V1.5</title>
 
 <!-- For now keep this but this should later be moved into its own seperate file-->
-<script type="javascript"> 
+<script> 
 
 document.onkeypress = keypressed;
 var last_action = "";
 var start_dt = new Date ( );
 var last_mills = start_dt.getTime ( );
 
-function sendMotion (action) {
+function sendMotion(action) {
    var run_dt = new Date ( );
    var mills = run_dt.getTime ( );
 
@@ -61,25 +61,19 @@ function keypressed (event) {
    if (keyCd == 47)            // /
       sendMotion ('home')
 
-   if (keyCd == 113 || keyCd == 81)  // q
-      sendMotion ('ltforward')
-
-   if (keyCd == 119 || keyCd == 87)  // w
+   if (keyCd == 38 || keyCd == 87)  // w or UP key
       sendMotion ('forward')
 
-   if (keyCd == 122 || keyCd == 90)  // z
+   if (keyCd == 83  || keyCd == 40)  // s or DOWN key
       sendMotion ('backward')
 
-   if (keyCd == 101 || keyCd == 69)  // e
-      sendMotion ('rtforward')
-
-   if (keyCd == 97 || keyCd == 65)   // a
+   if (keyCd == 37 || keyCd == 65)   // a or LEFT arrow
       sendMotion ('left')
 
-   if (keyCd == 104 || keyCd == 72)  // h
+   if (keyCd == 84 || keyCd == 96)  // T or NUM 0
       sendMotion ('stop')
 
-   if (keyCd == 115 || keyCd == 83)  // s
+   if (keyCd == 68 || keyCd == 39)  // d or RIGHT arrow
       sendMotion ('right')
 }
 
@@ -126,31 +120,33 @@ function keypressed (event) {
 
 				Throttle: {{throttle}} Turn: {{str_pos}}
 
+				{% endif %}
+
 			</div>
 	
 			<div>
 
 				<h2>Motion:</h2>
       
-				<button type="button" class="forward dir-buttons" name="forward" value="0" id="forward">Forward
-				<input type="image" src="./static/forward.png" id="imgforward"
-        		onclick="sendMotion ('forward');"/></button>
+				<button type="button" class="forward dir-buttons" name="forward" value="0" 
+				id="forward" onclick="sendMotion('forward')"><img src="./static/forward.png" 
+				id="imgforward">Forward</button>
          
-				<button type="button" class="right dir-buttons" name="rtforward" value="0" id="right">Right
-				<input type="image" src="./static/right.png"
-				id="imgRtforward" onclick="sendMotion ('right');"/></button>
+				<button type="button" class="right dir-buttons" name="right" value="0" 
+				id="right" onclick="sendMotion('right')"><img src="./static/right.png"
+				id="imgright">Right</button>
      		
-				<button type="button" class="em-stop dir-buttons" name="stop" value="0" id="stop">Stop
-				<input type="image" src="./static/stop.png" id="imgstop"
-				onclick="sendMotion ('stop');"/></button>
+				<button type="button" class="em-stop dir-buttons" name="stop" value="0" 
+				id="stop" onclick="sendMotion('stop')"><img src="./static/stop.png" 
+				id="imgstop">Stop</button>
 				
-				<button type="button" class="left dir-buttons" name="left" value="0" id="left">Left
-				<input type="image" src="./static/left.png" id="imgleft"
-				onclick="sendMotion ('left');"/></button>        
+				<button type="button" class="left dir-buttons" name="left" value="0" 
+				id="left" onclick="sendMotion('left')"><img src="./static/left.png" 
+				id="imgleft">Left</button>        
 		
-				<button type="button" class="reverse dir-buttons" name="backward" value="0" id="backward">Reverse
-				<input type="image" src="./static/backward.png" id="imgbackward"
-				onclick="sendMotion ('backward');"/></button>
+				<button type="button" class="reverse dir-buttons" name="backward" value="0" 
+				id="backward" onclick="sendMotion('backward')"><img src="./static/backward.png" 
+				id="imgbackward">Reverse</button>
 
 			</div>
 	
@@ -161,13 +157,13 @@ function keypressed (event) {
 				<centre>
 
 					<input type="radio" name="speed" value="42" id="speed_low"
-					onclick="sendMotion ('speed_low');"/>Low throttle
+					onclick="sendMotion('speed_low')">Low throttle
 
 					<input type="radio" name="speed" value="84" id="speed_mid"
-					onclick="sendMotion ('speed_mid');" checked/>Mid throttle
+					onclick="sendMotion('speed_mid')" checked>Mid throttle
 		
 					<input type="radio" name="speed" value="126" id="speed_hi"
-					onclick="sendMotion ('speed_hi');"/>High throttle
+					onclick="sendMotion('speed_hi')">High throttle
 
 					<!--
 						Todo
@@ -185,13 +181,13 @@ function keypressed (event) {
 				<centre>
 
 					<input type="radio" name="run_time run-duration" value="42" id="short_time"
-					onclick="sendMotion ('short_time');"/>Short run
+					onclick="sendMotion('short_time')">Short run
          
 					<input type="radio" name="run_time run-duration" value="84" id="mid_run"
-					onclick="sendMotion ('mid_run');" checked/>Med run
+					onclick="sendMotion('mid_run')" checked>Med run
 		
 					<input type="radio" name="run_time run-duration" value="126" id="continuous"
-					onclick="sendMotion ('continuous');"/>Continuous
+					onclick="sendMotion('continuous')">Continuous
 
 				</centre>
 		
@@ -204,32 +200,33 @@ function keypressed (event) {
 			<div class="feed">
 	
 				<img src="localhost:8080/?action=stream" alt="Feed Offline">
+
+				<!-- Doesnt work, need to be edited manual prehaps we find a way to include some kind of 
+					prefix that self adjust to the corret ip address-->
 	
 			</div>
 
 			<div>
 		
-				<button type="button" class="pan-left cam-buttons" name="panlt" id="panlt">
-				<input type="image" src="./static/1leftarrow.png"
-				id="imgpanlt" onclick="sendMotion ('panlt');"
-				onkeypress="keypressed (event);"/>
+				<button type="button" class="pan-left cam-buttons" name="panlt" id="panlt" 
+				onclick="sendMotion('panlt')"><img src="./static/1leftarrow.png" id="imgpanlt">
+				</button>
 		
-				<button type="button" class="pan-right cam-buttons" name="panrt" id="panrt">
-				<input type="image" src="./static/1rightarrow.png"
-				id="imgpanrt" onclick="sendMotion ('panrt');"/>
+				<button type="button" class="pan-right cam-buttons" name="panrt" id="panrt"
+				onclick="sendMotion('panrt')"><img src="./static/1rightarrow.png" id="imgpanrt">
+				</button>
         
-        		<button type="button" class="pan-home cam-buttons" name="homecam" id="homecam">Home
-        		<input type="image" src="./static/gohome.png"
-        		id="imghome" onclick="sendMotion ('home');"/>
+        		<button type="button" class="pan-home cam-buttons" name="homecam" id="homecam"
+				onclick="sendMotion('home')">Home<img src="./static/gohome.png"
+        		id="imghome"></button>
         
-        		<button class="pan-left-full cam-buttons" name="panfull_lt" id="panfull_lt">
-        		<input type="image" src="./static/arrow-left-double.png"
-        		id="imgpanall_lt" onclick="sendMotion ('panfull_lt');"
-        		onkeypress="keypressed (event);"/>
+        		<button class="pan-left-full cam-buttons" name="panfull_lt" id="panfull_lt" 
+				onclick="sendMotion ('panfull_lt')"><img" src="./static/arrow-left-double.png"
+        		id="imgpanall_lt"></button>
 		
-        		<button class="pan-right-full cam-buttons" name="panfull_rt" id="panfull_rt">
-        		<input type="image" src="./static/arrow-right-double.png"
-        		id="imgpanall_rt" onclick="sendMotion ('panfull_rt');"/>
+        		<button class="pan-right-full cam-buttons" name="panfull_rt" id="panfull_rt"
+				onclick="sendMotion('panfull_rt')"><img src="./static/arrow-right-double.png" 
+				id="imgpanall_rt"></button>
 
 			</div>
 		
