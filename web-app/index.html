@@ -81,9 +81,9 @@ function keypressed (event) {
 </head>
 <body>
 	<div>
-	<centre>
+	<center>
 		<h1>Rover Control Center V1.5</h1>
-	</centre>
+	</center>
 	</div>
 	
 	<!---
@@ -106,9 +106,7 @@ function keypressed (event) {
 
 	<div class = "container">
 
-		<div class = "control-panel">
-		
-			<div class = "read_outs">
+		<div class = "stats">
 
 				{% if direction == True %}
 
@@ -122,114 +120,108 @@ function keypressed (event) {
 
 				{% endif %}
 
-			</div>
+		</div>
 	
-			<div>
+		<div class="motion-controls">
 
-				<h2>Motion:</h2>
+			<h2>Motion:</h2>
       
-				<button type="button" class="forward dir-buttons" name="forward" value="0" 
-				id="forward" onclick="sendMotion('forward')"><img src="./static/forward.png" 
-				id="imgforward">Forward</button>
+			<button type="button" class="forward dir-buttons" name="forward" value="0" 
+			id="forward" onclick="sendMotion('forward')"><img src="./static/forward.png" 
+			id="imgforward">Forward</button>
          
-				<button type="button" class="right dir-buttons" name="right" value="0" 
-				id="right" onclick="sendMotion('right')"><img src="./static/right.png"
-				id="imgright">Right</button>
+			<button type="button" class="right dir-buttons" name="right" value="0" 
+			id="right" onclick="sendMotion('right')"><img src="./static/right.png"
+			id="imgright">Right</button>
      		
-				<button type="button" class="em-stop dir-buttons" name="stop" value="0" 
-				id="stop" onclick="sendMotion('stop')"><img src="./static/stop.png" 
-				id="imgstop">Stop</button>
+			<button type="button" class="em-stop dir-buttons" name="stop" value="0" 
+			id="stop" onclick="sendMotion('stop')"><img src="./static/stop.png" 
+			id="imgstop">Stop</button>
 				
-				<button type="button" class="left dir-buttons" name="left" value="0" 
-				id="left" onclick="sendMotion('left')"><img src="./static/left.png" 
-				id="imgleft">Left</button>        
+			<button type="button" class="left dir-buttons" name="left" value="0" 
+			id="left" onclick="sendMotion('left')"><img src="./static/left.png" 
+			id="imgleft">Left</button>        
 		
-				<button type="button" class="reverse dir-buttons" name="backward" value="0" 
-				id="backward" onclick="sendMotion('backward')"><img src="./static/backward.png" 
-				id="imgbackward">Reverse</button>
+			<button type="button" class="reverse dir-buttons" name="backward" value="0" 
+			id="backward" onclick="sendMotion('backward')"><img src="./static/backward.png" 
+			id="imgbackward">Reverse</button>
 
-			</div>
+		</div>
 	
-			<div class = "throttle-param">
+		<div class="operational-profile">
 
-				<h2>Throttle:</h2>
+			<h2>Throttle:</h2>
 			
-				<centre>
+			<center>
 
-					<input type="radio" name="speed" value="42" id="speed_low"
-					onclick="sendMotion('speed_low')">Low throttle
+				<input type="radio" class="throttle-param" name="speed_low" value="42" id="speed_low"
+				onclick="sendMotion('speed_low')">Low throttle
 
-					<input type="radio" name="speed" value="84" id="speed_mid"
-					onclick="sendMotion('speed_mid')" checked>Mid throttle
+				<input type="radio" class="throttle-param" name="speed_mid" value="84" id="speed_mid"
+				onclick="sendMotion('speed_mid')" checked>Mid throttle
 		
-					<input type="radio" name="speed" value="126" id="speed_hi"
-					onclick="sendMotion('speed_hi')">High throttle
+				<input type="radio" class="throttle-param" name="speed_hi" value="126" id="speed_hi"
+				onclick="sendMotion('speed_hi')">High throttle
 
 					<!--
 						Todo
 						change over to a range bar for mine fine grained control
 					-->
 
-				</centre>
+			</center>
 	
-			</div>
+			<br>
 		
-			<div>
+			<h2>Run time:</h2>
 
-				<h2>Run time:</h2>
+			<center>
 
-				<centre>
-
-					<input type="radio" name="run_time run-duration" value="42" id="short_time"
-					onclick="sendMotion('short_time')">Short run
+				<input type="radio" class="run-duration" name="short_time" value="42" id="short_time"
+				onclick="sendMotion('short_time')">Short run
          
-					<input type="radio" name="run_time run-duration" value="84" id="mid_run"
-					onclick="sendMotion('mid_run')" checked>Med run
+				<input type="radio" class="run-duration" name="mid_run" value="84" id="mid_run"
+				onclick="sendMotion('mid_run')" checked>Med run
 		
-					<input type="radio" name="run_time run-duration" value="126" id="continuous"
-					onclick="sendMotion('continuous')">Continuous
+				<input type="radio" class="run-duration" name="Continuous"  value="126" id="continuous"
+				onclick="sendMotion('continuous')">Continuous
 
-				</centre>
+			</center>
 		
-			</div>
-
 		</div>
-	
-		<div class = "cam-panel">
-		
-			<div class="feed">
-	
-				<img src="localhost:8080/?action=stream" alt="Feed Offline">
 
-				<!-- Doesnt work, need to be edited manual prehaps we find a way to include some kind of 
+	
+		
+		<div class="feed">
+	
+			<img src="localhost:8080/?action=stream" alt="Feed Offline">
+
+			<!-- Doesnt work, need to be edited manual prehaps we find a way to include some kind of 
 					prefix that self adjust to the corret ip address-->
 	
-			</div>
+		</div>
 
-			<div>
+		<div class ="camera-controls">
 		
-				<button type="button" class="pan-left cam-buttons" name="panlt" id="panlt" 
-				onclick="sendMotion('panlt')"><img src="./static/1leftarrow.png" id="imgpanlt">
-				</button>
+			<button type="button" class="cam-buttons pan-left" name="panlt" id="panlt" 
+			onclick="sendMotion('panlt')"><img src="./static/1leftarrow.png" id="imgpanlt">
+			</button>
 		
-				<button type="button" class="pan-right cam-buttons" name="panrt" id="panrt"
-				onclick="sendMotion('panrt')"><img src="./static/1rightarrow.png" id="imgpanrt">
-				</button>
+			<button type="button" class="cam-buttons pan-right " name="panrt" id="panrt"
+			onclick="sendMotion('panrt')"><img src="./static/1rightarrow.png" id="imgpanrt">
+			</button>
         
-        		<button type="button" class="pan-home cam-buttons" name="homecam" id="homecam"
-				onclick="sendMotion('home')">Home<img src="./static/gohome.png"
-        		id="imghome"></button>
+        	<button type="button" class="cam-buttons pan-home" name="homecam" id="homecam"
+			onclick="sendMotion('home')">Home<img src="./static/gohome.png"
+        	id="imghome"></button>
         
-        		<button class="pan-left-full cam-buttons" name="panfull_lt" id="panfull_lt" 
-				onclick="sendMotion ('panfull_lt')"><img" src="./static/arrow-left-double.png"
-        		id="imgpanall_lt"></button>
+        	<button class="cam-buttons pan-left-full" name="panfull_lt" id="panfull_lt" 
+			onclick="sendMotion ('panfull_lt')"><img src="./static/arrow-left-double.png"
+        	id="imgpanall_lt"></button>
 		
-        		<button class="pan-right-full cam-buttons" name="panfull_rt" id="panfull_rt"
-				onclick="sendMotion('panfull_rt')"><img src="./static/arrow-right-double.png" 
-				id="imgpanall_rt"></button>
+        	<button class="cam-buttons pan-right-full" name="panfull_rt" id="panfull_rt"
+			onclick="sendMotion('panfull_rt')"><img src="./static/arrow-right-double.png" 
+			id="imgpanall_rt"></button>
 
-			</div>
-		
 		</div>
 
 	</div>
