@@ -93,7 +93,7 @@ serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
 
 def transmit(data1, data2, data3):
     
-    PiCommand = [str(data1),str(data2),str(data3),]
+    PiCommand = [str(data1),str(data2),str(data3)]
     outGoing = (','.join(PiCommand) + '\n')
     piComm.write(outGoing.encode('utf-8'))
 
@@ -145,6 +145,7 @@ def sw_left():
     global str_pos
 
     if str_pos > serLeft:
+      
       str_pos -= 5
    
     
@@ -156,15 +157,12 @@ def sw_right():
 
       str_pos += 5
 
-    #place serial command for turning right
 
 def reset():
-    reset = ['0','0','30']
-    transmit()
+    transmit('0','0','30')
 
 def stop():
-    stopping = ['0','0',str(str_pos),]
-    transmit()
+    transmit('0','0',str(str_pos))
 
 def run_timer(interval):
 
@@ -179,7 +177,7 @@ def index( ):
 
 @app.route("/forward")
 def forward():
-   global run_time, func
+   global run_time, func, time_limit
 
    print("Forward")
 
@@ -195,11 +193,11 @@ def forward():
 
       stop()
 
-   return render_template('index.html', direction, throttle)
+   return direction, throttle
 
 @app.route("/backward")
 def reverse():
-   global run_time, func
+   global run_time, func, time_limit
 
    print("Backward")
 
@@ -211,7 +209,7 @@ def reverse():
 
       stop()
 
-   return render_template('index.html', direction, throttle)
+   return direction, throttle
 
 @app.route("/left")
 def left():
@@ -223,7 +221,7 @@ def left():
    # Keep it simple for now but we may later decide to include an offset for the time it takes the servo to get into position
    time.sleep(0.05) # sleep @1/2 second
    
-   return render_template('index.html', str_pos)
+   return str_pos
 
 @app.route("/right")
 def right():
@@ -234,15 +232,16 @@ def right():
 
    time.sleep(0.05) # sleep @1/2 second - need to adjust for servo
 
-   return render_template('index.html', str_pos)
+   return str_pos
 
 @app.route("/stop")
-def stop():
+def em_stop():
 
-   print("Stopping")
    stop()
 
    time.sleep(0.1) # sleep 100ms
+
+   print("Stopped")
    
    return render_template('index.html')
 

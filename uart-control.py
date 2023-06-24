@@ -14,8 +14,11 @@ import serial.tools.list_ports
 import sys
 import tty
 import termios
+import adafruit_platformdetect
 import board
 import digitalio
+
+detector = adafruit_platformdetect.Detector()
 
 # Variables to store the control data feteched from the Arduino
 
@@ -43,30 +46,34 @@ last_sent = [0, 0, 0]
 
 lit_on = False
 
-# Light control does not have to be precise so this can simplely be toggled by the sbc with concern over the timing requirements
-# Remember pins will need to be assigned base on the sbc used
+# Lighting controls do not require as precise timing so instead they should be toggle by the GPIO pins on the SBC
+# of choice to simplify this process we will use the adafruit detection mechanism.
 
-# Pcduino pins:
-#lamp1_pin = board.D8
-#lamp2_pin = board.D9
-#lamp3_pin = board.D10
-#lamp4_pin = board.D11
 
-# PI pins
-lamp1_pin = board.D17
-lamp2_pin = board.D27
-lamp3_pin = board.D22
-lamp4_pin = board.D5
 
-fwd_lamp = digitalio.DigitalInOut(lamp1_pin)
+if detector.board.any_pcduino_board:
+
+    fwd_lamp = board.D8
+    rev_lamp = board.D9
+    rt_ind = board.D10
+    lft_ind = board.D11
+
+
+if detector.board.any_raspberry_pi:
+
+    fwd_lamp = board.D17
+    rev_lamp = board.D27
+    rt_ind = board.D22
+    lft_ind = board.D5
+
+digitalio.DigitalInOut(fwd_lamp)
 fwd_lamp.direction = digitalio.Direction.OUTPUT
-rt_lamp = digitalio.DigitalInOut(lamp2_pin)
-rt_lamp.direction = digitalio.Direction.OUTPUT
-lft_lamp = digitalio.DigitalInOut(lamp3_pin)
-lft_lamp.direction = digitalio.Direction.OUTPUT
-rev_lamp = digitalio.DigitalInOut(lamp4_pin)
+digitalio.DigitalInOut(rt_ind)
+rt_ind.direction = digitalio.Direction.OUTPUT
+digitalio.DigitalInOut(lft_ind)
+lft_ind.direction = digitalio.Direction.OUTPUT
+digitalio.DigitalInOut(rev_lamp)
 rev_lamp.direction = digitalio.Direction.OUTPUT
-
 
 
 def readchar():
@@ -141,7 +148,7 @@ piComm.flush()
 
 # Fetch the configuration data then store to arrays as allocated above
 configData = recieve()
-configData = configData.split(';') # Seperate the motor from the Servo constraints
+configData = configData.split(';' ) # Seperate the motor from the Servo constraints
 motData, servoData = configData
 
 # Start by processing the Motor data
@@ -153,7 +160,7 @@ for m in range(len(motData)):
     print(motLabel[m] + str(motData[m]))
 
 # Now proccess data retaining the Servo
-servoData = servoData.lstrip(' Servo: ')
+servoData = servoData.lstrip('Servo: ')
 servoData = servoData.split(',')
 
 print("Servo configuaration: ")
@@ -367,37 +374,37 @@ try:
                 rev_lamp.value = True
 
         elif keyp == 'd' or ord(keyp) == 18:
-            print('Turning right:', end=' ')
+            print('Turning right', end=' ')
             if pos < servo_right:
                 pos = pos + 5
                 bearing = bearing + 5
             if pos < servo_centre:
-                print('by 5 deg now left at ' + str(abs(bearing)))
+                print('by 5 deg now left at: ' + str(abs(bearing)))
             elif pos == servo_centre:
                 print('steering returned to centre')
             else:
-                print('now at ' + str(bearing))
+                print('now at: ' + str(bearing))
             if pos == servo_right:
                 print('unable to move at full turn')
             if lit_on == True:
-                lft_lamp.value = True
+                lft_ind.value = True
             
 
         elif keyp == 'a' or ord(keyp) == 19:
-            print('Turning left:', end=' ')
+            print('Turning left', end=' ')
             if pos > servo_left:
                 pos = pos - 5
                 bearing = bearing - 5
             if pos > servo_centre:
-                print('by 5 deg now right at ' + str(bearing))
+                print('by 5 deg now right at: ' + str(bearing))
             elif pos == servo_centre:
                 print('steering returned to centre')
             else:
-                print('now at ' + str(abs(bearing)))
+                print('now at: ' + str(abs(bearing)))
             if pos == servo_left:
                 print('unable to move at full turn')
             if lit_on == True:
-                rt_lamp.value = True
+                rt_ind.value = True
 
         elif keyp == '.' or keyp == '>':
             if throttle < max_throttle and throttle >= min_throttle:
