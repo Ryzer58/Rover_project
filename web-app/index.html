@@ -103,24 +103,19 @@ function keypressed (event) {
 		Option to stream audio input from the webcam's microphone
 
 	-->
+	
+	<div class = "controller">
 
-	<div class = "container">
-
-		<div class = "stats">
-
-				{% if direction == True %}
-
-					Moving forward
-
-				{% else %}
-
-					Moving in reverse
-
-				Throttle: {{throttle}} Turn: {{str_pos}}
-
-				{% endif %}
-
+		<div class="feed">
+	
+			<img src="localhost:8080/?action=stream" alt="Feed Offline">
+	
+			<!-- Doesnt work, need to be edited manual prehaps we find a way to include some kind of 
+					prefix that self adjust to the corret ip address-->
+	
 		</div>
+
+		
 	
 		<div class="motion-controls">
 
@@ -145,6 +140,30 @@ function keypressed (event) {
 			<button type="button" class="reverse dir-buttons" name="backward" value="0" 
 			id="backward" onclick="sendMotion('backward')"><img src="./static/backward.png" 
 			id="imgbackward">Reverse</button>
+
+		</div>
+
+		<div class ="camera-controls">
+		
+			<button type="button" class="cam-buttons pan-left" name="panlt" id="panlt" 
+			onclick="sendMotion('panlt')"><img src="./static/1leftarrow.png" id="imgpanlt">
+			</button>
+		
+			<button type="button" class="cam-buttons pan-right " name="panrt" id="panrt"
+			onclick="sendMotion('panrt')"><img src="./static/1rightarrow.png" id="imgpanrt">
+			</button>
+        
+        	<button type="button" class="cam-buttons pan-home" name="homecam" id="homecam"
+			onclick="sendMotion('home')">Home<img src="./static/gohome.png"
+        	id="imghome"></button>
+        
+        	<button class="cam-buttons pan-left-full" name="panfull_lt" id="panfull_lt" 
+			onclick="sendMotion ('panfull_lt')"><img src="./static/arrow-left-double.png"
+        	id="imgpanall_lt"></button>
+		
+        	<button class="cam-buttons pan-right-full" name="panfull_rt" id="panfull_rt"
+			onclick="sendMotion('panfull_rt')"><img src="./static/arrow-right-double.png" 
+			id="imgpanall_rt"></button>
 
 		</div>
 	
@@ -187,40 +206,21 @@ function keypressed (event) {
 
 			</center>
 		
-		</div>
+		</div>		
 
-	
-		
-		<div class="feed">
-	
-			<img src="localhost:8080/?action=stream" alt="Feed Offline">
+		<div class = "readings">
 
-			<!-- Doesnt work, need to be edited manual prehaps we find a way to include some kind of 
-					prefix that self adjust to the corret ip address-->
-	
-		</div>
+			{% if direction == True %}
 
-		<div class ="camera-controls">
-		
-			<button type="button" class="cam-buttons pan-left" name="panlt" id="panlt" 
-			onclick="sendMotion('panlt')"><img src="./static/1leftarrow.png" id="imgpanlt">
-			</button>
-		
-			<button type="button" class="cam-buttons pan-right " name="panrt" id="panrt"
-			onclick="sendMotion('panrt')"><img src="./static/1rightarrow.png" id="imgpanrt">
-			</button>
-        
-        	<button type="button" class="cam-buttons pan-home" name="homecam" id="homecam"
-			onclick="sendMotion('home')">Home<img src="./static/gohome.png"
-        	id="imghome"></button>
-        
-        	<button class="cam-buttons pan-left-full" name="panfull_lt" id="panfull_lt" 
-			onclick="sendMotion ('panfull_lt')"><img src="./static/arrow-left-double.png"
-        	id="imgpanall_lt"></button>
-		
-        	<button class="cam-buttons pan-right-full" name="panfull_rt" id="panfull_rt"
-			onclick="sendMotion('panfull_rt')"><img src="./static/arrow-right-double.png" 
-			id="imgpanall_rt"></button>
+				Moving forward
+
+			{% else %}
+
+				Moving in reverse
+
+			Throttle: {{throttle}} Turn: {{str_pos}}
+
+			{% endif %}
 
 		</div>
 
