@@ -202,7 +202,7 @@ function keypressed (event) {
 				onclick="sendMotion('mid_run')" checked>Med run
 		
 				<input type="radio" class="run-duration" name="Continuous"  value="126" id="continuous"
-				onclick="sendMotion('continuous')">Continuous
+				onclick="sendMotion('continuous')">Continuous</input>
 
 			</center>
 		
@@ -210,7 +210,7 @@ function keypressed (event) {
 
 		<div class = "readings">
 
-			{% if direction == True %}
+			{% if direction == true %}
 
 				Moving forward
 
@@ -218,9 +218,11 @@ function keypressed (event) {
 
 				Moving in reverse
 
-			Throttle: {{throttle}} Turn: {{str_pos}}
+			Throttle: {{ acceleration }} Turn: {{ steering }}
 
-			{% endif %}
+			Obstacles:
+
+			Left: {{ position1 }} Center: {{ position2 }} Right: {{ position3 }}
 
 		</div>
 

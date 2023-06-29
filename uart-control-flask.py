@@ -19,7 +19,7 @@ import serial
 from serial.tools import list_ports
 from flask import Flask, render_template, request
 
-app = Flask (__name__, template_folder='web-app', static_folder='web-app/static')
+app = Flask (__name__, template_folder='web-app/', static_folder='web-app/static/')
 
 # Rover operating parameters to be populated by information collected from Arduino like that used in the intial
 # cli based program
@@ -28,7 +28,7 @@ min_throttle = 0
 max_throttle = 0
 num_mot = 0
 throttle = 0
-profile = throttle
+throttle_level = 100
 direction = True
 
 motParam = [min_throttle, max_throttle, num_mot,]
@@ -38,13 +38,15 @@ serRight = 0
 serCentre = 0
 serLeft = 0
 str_pos = 30
+
 pan_pos = 90
 
 servoParam = [serCentre, serLeft, serRight]
 servoLabel = ['Centre ','Max left ','Max right ']
 
+time_limit = True
 run_time = 0 #Just a place holder for a counter yet to be implemented
-arc_time = 1945 #todo time for the servo to swing 60 degree in microseconds (more use for automation rather than in manual mode)
+#arc_time = 1945 #todo time for the servo to swing 60 degree in microseconds (more use for automation rather than in manual mode)
 func = 0
 
 speedLock = 0
@@ -67,19 +69,19 @@ for port in myports:
         
 piComm = serial.Serial(arduLink,19200,timeout = 2)
 piComm.flush()
-piComm.readline().decode('utf-8')
-piComm = piComm.split("; ")
-motor_range, servo_range = piComm
+rover_param = piComm.readline().decode('utf-8')
+rover_param = rover_param.split("; ")
+motor_range, servo_range = rover_param
 
-motor_range.lstrip('Motor: ') # The first string sent will contain the motor data as defined in the Arduino setup function
-motData = motor_range.split(",")
+motData= motor_range.lstrip('Motor: ') # The first string sent will contain the motor data as defined in the Arduino setup function
+motData = motData.split(",")
 print("Motor Configuration: ")
 for m in range(len(motData)):
     motParam[m] = int(motData[m])
     print(motLabel[m] + str(motData[m])) #Print back the retrieved value
 
-servo_range = servo_range.lstrip('Servo: ') # The second string will contain the Servo constraints
-servoData = servo_range.split(",")
+servoData = servo_range.lstrip('Servo: ') # The second string will contain the Servo constraints
+servoData = servoData.split(",")
 print("Servo configuaration: ")
 for s in range(len(servoData)):
     servoParam[s] = int(servoData[s])
@@ -106,12 +108,8 @@ def recieve():
     #Once the dash board is working we can move onto processing incoming data
 
 
-def go_forward():
-   global throttle, direction, profile
-
-   if throttle == 0 or throttle < min_throttle:
-
-      throttle = 170
+def move_forward():
+   global throttle_level, direction
 
    if direction != True and throttle > min_throttle:
 
@@ -119,16 +117,12 @@ def go_forward():
       
       direction = True
 
-      throttle = profile
+   throttle = throttle_level
 
-   return direction
+   return direction, throttle
 
-def go_reverse():
-   global throttle, direction, profile
-
-   if throttle == 0 or throttle < min_throttle:
-
-      throttle = 170
+def move_reverse():
+   global throttle_level, direction, profile
 
    if direction != False and throttle > min_throttle:
 
@@ -136,26 +130,28 @@ def go_reverse():
 
       direction = False
 
-      throttle = profile
+   throttle = throttle_level
 
-   return direction
+   return direction, throttle
 
         
-def sw_left(): 
-    global str_pos
+def bear_left():  
+   global str_pos, serLeft
 
-    if str_pos > serLeft:
+   if str_pos > serLeft:
       
       str_pos -= 5
    
-    
-        
+   return str_pos
+           
 def sw_right():
-    global str_pos
+   global str_pos, serRight
 
-    if str_pos < serRight:
+   if str_pos < serRight:
 
       str_pos += 5
+
+   return str_pos
 
 
 def reset():
@@ -173,15 +169,15 @@ def run_timer(interval):
 
 @app.route("/")
 def index( ):
-   return render_template('index.html', name = None)
+   return render_template("index.html", name = None)
 
 @app.route("/forward")
 def forward():
-   global run_time, func, time_limit
+   global num_mot, run_time, func, time_limit
 
    print("Forward")
 
-   func=go_forward()
+   direction, power = move_forward()
 
    # Need a better alternative to sleep which freezes controls
 
@@ -193,15 +189,19 @@ def forward():
 
       stop()
 
-   return direction, throttle
+      direction = str(direction)
+
+      power = str(power)
+
+   return render_template('index.html', direction=direction, acceleration=power)
 
 @app.route("/backward")
 def reverse():
-   global run_time, func, time_limit
+   global num_mot, run_time, func, time_limit
 
    print("Backward")
 
-   func=go_reverse()
+   direction, power = move_reverse()
    
    if time_limit == True: # If not continuous, then   stop after delay
 
@@ -209,41 +209,52 @@ def reverse():
 
       stop()
 
-   return direction, throttle
+   direction = str(direction)
+
+   power = str(power)
+
+   return render_template('index.html', acceleration=direction, acceleration=power)
 
 @app.route("/left")
 def left():
-   global turn_offset
+   global num_mot
 
    print("Left")
-   sw_left()
+   steer_pos = bear_left()
    
    # Keep it simple for now but we may later decide to include an offset for the time it takes the servo to get into position
    time.sleep(0.05) # sleep @1/2 second
+
+   steer_pos = str(steer_pos)
    
-   return str_pos
+   return render_template('index.html', steering=steer_pos)
 
 @app.route("/right")
 def right():
-   global turn_offset
+   global num_mot
 
    print("Right")
-   sw_right()
+   steer_pos = sw_right()
 
    time.sleep(0.05) # sleep @1/2 second - need to adjust for servo
 
-   return str_pos
+   steer_pos = str(steer_pos)
+
+   return render_template('index.html', steering=steer_pos)
 
 @app.route("/stop")
 def em_stop():
+   global throttle
 
    stop()
 
    time.sleep(0.1) # sleep 100ms
 
    print("Stopped")
+
+   throttle = str(throttle)
    
-   return render_template('index.html')
+   return render_template('index.html', acceleration=throttle)
 
 
 # Throttle/PWM level, Currently configured as 3 preset values with a later goal being to implement a slide bar 
@@ -251,36 +262,29 @@ def em_stop():
 
 @app.route("/speed_low")
 def speed_low():
-   global throttle, turn_offset, profile
+   global throttle_level
 
-   throttle = 100
-   profile = throttle
-   turn_offset = 0.001
-   time.sleep(0.150)
+   throttle_level = 100
 
-   return render_template('index.html', throttle)
+   return render_template("index.html")
    
 
 @app.route("/speed_mid")
 def speed_mid():
-   global throttle, turn_offset, profile
+   global throttle_level
 
-   throttle = 170
-   profile = throttle
-   turn_offset = 0.166   
+   throttle_level = 170 
    
-   return render_template('index.html', throttle)
+   return render_template("index.html")
 
 
 @app.route("/speed_hi")
 def speed_hi():
-   global throttle, turn_offset, profile
+   global throttle_level
 
-   throttle = 245
-   profile = throttle
-   turn_offset = 0.332
-   
-   return render_template('index.html',throttle)
+   throttle_level = 245
+      
+   return render_template("index.html")
 
 # Run time - a counter for controlling the duration for which the rover moves, again the implements a set of predefined speeds that range from 'short' to
 # continous where the counter is disabled and the motors will keep on running unless a stop command is sent 
@@ -292,7 +296,7 @@ def continuous():
    print("Continuous run")
    time_limit = False
    
-   return render_template('index.html', run_time)
+   return render_template('index.html')
 
 @app.route("/mid_run")
 def mid_run():
@@ -302,7 +306,7 @@ def mid_run():
    run_time = 0.750
    time_limit = True
 
-   return render_template('index.html', run_time)
+   return render_template('index.html')
 
 @app.route("/short_time")
 def short_time():
@@ -312,7 +316,7 @@ def short_time():
    run_time = 0.300
    time_limit = True
    
-   return render_template('index.html', run_time)
+   return render_template('index.html')
 
 # All Camera related controls (Yet to be implemented):
 
@@ -327,7 +331,7 @@ def panlf( ):
 
    time.sleep(0.150) # sleep 150ms
    
-   return render_template('index.html')
+   return render_template("index.html", bearing=str(pan_pos))
 
 @app.route("/panrt")
 def panrt():
@@ -340,7 +344,7 @@ def panrt():
 
    time.sleep(0.150) # sleep 150ms
    
-   return render_template('index.html')
+   return render_template("index.html", bearing=str(pan_pos))
 
 @app.route ("/home")
 def home():
@@ -350,7 +354,7 @@ def home():
 
    time.sleep(0.150) # sleep 150ms
   
-   return render_template('index.html')
+   return render_template("index.html", bearing=str(pan_pos))
 
 @app.route("/panfull_lt")
 def panfull_lt():
@@ -360,7 +364,7 @@ def panfull_lt():
 
    time.sleep (0.150) # sleep 150ms
    
-   return render_template('index.html')
+   return render_template("index.html", bearing=str(pan_pos))
 
 @app.route("/panfull_rt")
 def panfull_rt():
@@ -370,7 +374,7 @@ def panfull_rt():
 
    time.sleep(0.150) # sleep 150ms
    
-   return render_template('index.html')
+   return render_template("index.html", bearing=str(pan_pos))
 
 
 # This needs to be sent periodically in a way that does not block the rest of the script
@@ -382,4 +386,6 @@ transmit(func, throttle, str_pos)
 #recieve() - need to add once I find a way to forward the measurements onto the webpage
 
 if __name__ == "__main__" :
-   app.run (host = '0.0.0.0', port = 5000, debug = True)
+   app.run (host = '192.168.0.242', port = 5000, debug = False)
+   # disable debug due to cause reset which cause intial setup to rerun which of course
+   # will lead to it failing on the second run as the arduino will only issue this data once.
