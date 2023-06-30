@@ -213,7 +213,7 @@ def reverse():
 
    power = str(power)
 
-   return render_template('index.html', acceleration=direction, acceleration=power)
+   return render_template('index.html', direction=direction, acceleration=power)
 
 @app.route("/left")
 def left():
