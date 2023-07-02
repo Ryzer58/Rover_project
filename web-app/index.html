@@ -212,13 +212,15 @@ function keypressed (event) {
 
 			{% if direction == true %}
 
-				Moving forward
+				<p>Moving forward</p>
 
 			{% else %}
 
-				Moving in reverse
+				<p>Moving in reverse</p>
 
-			Throttle: {{ acceleration }} Turn: {{ steering }}
+			{% endif %}
+
+			<p>Throttle: {{ acceleration }} Turn: {{ steering }}</p>
 
 			Obstacles:
 

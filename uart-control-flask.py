@@ -27,8 +27,7 @@ app = Flask (__name__, template_folder='web-app/', static_folder='web-app/static
 min_throttle = 0
 max_throttle = 0
 num_mot = 0
-throttle = 0
-throttle_level = 100
+throttle = 100
 direction = True
 
 motParam = [min_throttle, max_throttle, num_mot,]
@@ -45,10 +44,11 @@ servoParam = [serCentre, serLeft, serRight]
 servoLabel = ['Centre ','Max left ','Max right ']
 
 time_limit = True
+start_timer = True
 run_time = 0 #Just a place holder for a counter yet to be implemented
 #arc_time = 1945 #todo time for the servo to swing 60 degree in microseconds (more use for automation rather than in manual mode)
 func = 0
-
+wait_time = 0
 speedLock = 0
 
 
@@ -109,7 +109,7 @@ def recieve():
 
 
 def move_forward():
-   global throttle_level, direction
+   global throttle, direction
 
    if direction != True and throttle > min_throttle:
 
@@ -117,20 +117,16 @@ def move_forward():
       
       direction = True
 
-   throttle = throttle_level
-
    return direction, throttle
 
 def move_reverse():
-   global throttle_level, direction, profile
+   global throttle, direction
 
    if direction != False and throttle > min_throttle:
 
       stop()
 
       direction = False
-
-   throttle = throttle_level
 
    return direction, throttle
 
@@ -173,45 +169,37 @@ def index( ):
 
 @app.route("/forward")
 def forward():
-   global num_mot, run_time, func, time_limit
+   global num_mot, run_time, time_limit, start_timer
 
    print("Forward")
 
    direction, power = move_forward()
 
-   # Need a better alternative to sleep which freezes controls
+   if time_limit == True:
 
-   # Ideally if we implemented some kind of time it would allow us to steer while moving
+      start_timer = True
 
-   if time_limit == True:  # If not continuous, then  stop after delay
+   else:
 
-      time.sleep(0.100 + run_time) # sleep 100ms + run_time
+      start_timer = False
 
-      stop()
-
-      direction = str(direction)
-
-      power = str(power)
-
-   return render_template('index.html', direction=direction, acceleration=power)
+   return render_template("index.html", direction=direction, acceleration=power)
 
 @app.route("/backward")
 def reverse():
-   global num_mot, run_time, func, time_limit
+   global num_mot, run_time, func, time_limit, start_timer
 
    print("Backward")
 
    direction, power = move_reverse()
    
-   if time_limit == True: # If not continuous, then   stop after delay
+   if time_limit == True:
 
-      time.sleep(0.100 + run_time) # sleep 100ms + run_time
+      start_timer = True
 
-      stop()
+   else:
 
-   direction = str(direction)
-
-   power = str(power)
+      start_timer = False
 
    return render_template('index.html', direction=direction, acceleration=power)
 
@@ -222,11 +210,6 @@ def left():
    print("Left")
    steer_pos = bear_left()
    
-   # Keep it simple for now but we may later decide to include an offset for the time it takes the servo to get into position
-   time.sleep(0.05) # sleep @1/2 second
-
-   steer_pos = str(steer_pos)
-   
    return render_template('index.html', steering=steer_pos)
 
 @app.route("/right")
@@ -236,10 +219,6 @@ def right():
    print("Right")
    steer_pos = sw_right()
 
-   time.sleep(0.05) # sleep @1/2 second - need to adjust for servo
-
-   steer_pos = str(steer_pos)
-
    return render_template('index.html', steering=steer_pos)
 
 @app.route("/stop")
@@ -248,11 +227,7 @@ def em_stop():
 
    stop()
 
-   time.sleep(0.1) # sleep 100ms
-
    print("Stopped")
-
-   throttle = str(throttle)
    
    return render_template('index.html', acceleration=throttle)
 
@@ -262,27 +237,27 @@ def em_stop():
 
 @app.route("/speed_low")
 def speed_low():
-   global throttle_level
+   global throttle
 
-   throttle_level = 100
+   throttle = 100
 
    return render_template("index.html")
    
 
 @app.route("/speed_mid")
 def speed_mid():
-   global throttle_level
+   global throttle
 
-   throttle_level = 170 
+   throttle = 170 
    
    return render_template("index.html")
 
 
 @app.route("/speed_hi")
 def speed_hi():
-   global throttle_level
+   global throttle
 
-   throttle_level = 245
+   throttle = 245
       
    return render_template("index.html")
 
@@ -295,6 +270,7 @@ def continuous():
 
    print("Continuous run")
    time_limit = False
+   run_time = 0
    
    return render_template('index.html')
 
@@ -303,7 +279,7 @@ def mid_run():
    global run_time, time_limit
 
    print("Mid run")
-   run_time = 0.750
+   run_time = 1.5
    time_limit = True
 
    return render_template('index.html')
@@ -313,7 +289,7 @@ def short_time():
    global run_time, time_limit
 
    print("Short run")
-   run_time = 0.300
+   run_time = 3.0
    time_limit = True
    
    return render_template('index.html')
@@ -322,70 +298,77 @@ def short_time():
 
 @app.route("/panlt") #Cam Servo control functions
 def panlf( ):
-   global pan_pos
+   global pan_pos, wait_time
 
    print("Panlt")
    pan_pos += 5
    if pan_pos < 135:
       pan_pos = 135
 
-   time.sleep(0.150) # sleep 150ms
+   wait_time = 0.3
    
-   return render_template("index.html", bearing=str(pan_pos))
+   return render_template("index.html", bearing=pan_pos)
 
 @app.route("/panrt")
 def panrt():
-   global pan_pos
+   global pan_pos, wait_time
 
    print("Panrt")
    pan_pos -= 5
    if pan_pos > 45:
       pan_pos = 45
 
-   time.sleep(0.150) # sleep 150ms
+   wait_time = 0.3
    
-   return render_template("index.html", bearing=str(pan_pos))
+   return render_template("index.html", bearing=pan_pos)
 
 @app.route ("/home")
 def home():
-   global pan_pos
+   global pan_pos, wait_time
 
    print("Home")
 
-   time.sleep(0.150) # sleep 150ms
+   # To decide timings based on position
   
-   return render_template("index.html", bearing=str(pan_pos))
+   return render_template("index.html", bearing=pan_pos)
 
 @app.route("/panfull_lt")
 def panfull_lt():
-   global pan_pos
+   global pan_pos, wait_time
 
    print("Pan full left")
 
-   time.sleep (0.150) # sleep 150ms
+   wait_time = 0.6
    
-   return render_template("index.html", bearing=str(pan_pos))
+   return render_template("index.html", bearing=pan_pos)
 
 @app.route("/panfull_rt")
 def panfull_rt():
-   global pan_pos
+   global pan_pos, wait_time
 
    print ("Pan full right")
 
-   time.sleep(0.150) # sleep 150ms
+   wait_time = 0.6
    
-   return render_template("index.html", bearing=str(pan_pos))
+   return render_template("index.html", bearing=pan_pos)
 
 
 # This needs to be sent periodically in a way that does not block the rest of the script
 
 transmit(func, throttle, str_pos)
 
-#check_timer()
+if start_timer == True: # If not continuous, then   stop after delay
+
+      time.sleep(run_time) # sleep 100ms + run_time
+
+      stop()
+
+      start_timer = False
+
 
 #recieve() - need to add once I find a way to forward the measurements onto the webpage
 
 if __name__ == "__main__" :
-   app.run (host = '192.168.0.242', port = 5000, debug = False)
+   app.run (host = 'localhost', port = 5000, debug = False)
    # disable debug due to cause reset which cause intial setup to rerun which of course
    # will lead to it failing on the second run as the arduino will only issue this data once.
