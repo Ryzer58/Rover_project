@@ -14,7 +14,7 @@
 # 
 
 import sys
-import time
+from time import perf_counter_ns
 import serial
 from serial.tools import list_ports
 from flask import Flask, render_template, request
@@ -43,9 +43,9 @@ pan_pos = 90
 servoParam = [serCentre, serLeft, serRight]
 servoLabel = ['Centre ','Max left ','Max right ']
 
-time_limit = True
-start_timer = True
-run_time = 0 #Just a place holder for a counter yet to be implemented
+timer_enabled = True
+timer_start = 0
+timer_duration = 0 #Just a place holder for a counter yet to be implemented
 #arc_time = 1945 #todo time for the servo to swing 60 degree in microseconds (more use for automation rather than in manual mode)
 func = 0
 wait_time = 0
@@ -109,13 +109,15 @@ def recieve():
 
 
 def move_forward():
-   global throttle, direction
+   global throttle, throttle_level, direction
 
    if direction != True and throttle > min_throttle:
 
       stop()
       
       direction = True
+
+   throttle = throttle_level
 
    return direction, throttle
 
@@ -127,6 +129,8 @@ def move_reverse():
       stop()
 
       direction = False
+
+   throttle = throttle_level
 
    return direction, throttle
 
@@ -156,10 +160,6 @@ def reset():
 def stop():
     transmit('0','0',str(str_pos))
 
-def run_timer(interval):
-
-   time.sleep(interval)
-
 
 # Core movement controls 
 
@@ -169,37 +169,29 @@ def index( ):
 
 @app.route("/forward")
 def forward():
-   global num_mot, run_time, time_limit, start_timer
+   global num_mot, timer_enabled, timer_start
 
    print("Forward")
 
    direction, power = move_forward()
 
-   if time_limit == True:
+   if timer_enabled == True:
 
-      start_timer = True
-
-   else:
-
-      start_timer = False
-
+      timer_start = perf_counter_ns()
+      
    return render_template("index.html", direction=direction, acceleration=power)
 
 @app.route("/backward")
 def reverse():
-   global num_mot, run_time, func, time_limit, start_timer
+   global num_mot, timer_enabled, timer_start
 
    print("Backward")
 
    direction, power = move_reverse()
    
-   if time_limit == True:
+   if timer_enabled == True:
 
-      start_timer = True
-
-   else:
-
-      start_timer = False
+      timer_start = perf_counter_ns()
 
    return render_template('index.html', direction=direction, acceleration=power)
 
@@ -237,27 +229,27 @@ def em_stop():
 
 @app.route("/speed_low")
 def speed_low():
-   global throttle
+   global throttle_level
 
-   throttle = 100
+   throttle_level = 100
 
    return render_template("index.html")
    
 
 @app.route("/speed_mid")
 def speed_mid():
-   global throttle
+   global throttle_level
 
-   throttle = 170 
+   throttle_level = 170 
    
    return render_template("index.html")
 
 
 @app.route("/speed_hi")
 def speed_hi():
-   global throttle
+   global throttle_level
 
-   throttle = 245
+   throttle_level = 245
       
    return render_template("index.html")
 
@@ -266,31 +258,31 @@ def speed_hi():
 
 @app.route("/continuous") #running duration
 def continuous():
-   global run_time, time_limit
+   global timer_duration, timer_enabled
 
    print("Continuous run")
-   time_limit = False
-   run_time = 0
+   timer_enabled = False
+   timer_duration = 0
    
    return render_template('index.html')
 
 @app.route("/mid_run")
 def mid_run():
-   global run_time, time_limit
+   global timer_duration, timer_enabled
 
    print("Mid run")
-   run_time = 1.5
-   time_limit = True
+   timer_duration = 3000
+   timer_enabled = True
 
    return render_template('index.html')
 
 @app.route("/short_time")
 def short_time():
-   global run_time, time_limit
+   global timer_duration, timer_enabled
 
    print("Short run")
-   run_time = 3.0
-   time_limit = True
+   timer_duration = 1000
+   timer_enabled = True
    
    return render_template('index.html')
 
@@ -353,18 +345,23 @@ def panfull_rt():
    return render_template("index.html", bearing=pan_pos)
 
 
-# This needs to be sent periodically in a way that does not block the rest of the script
+# This needs to be sent periodically in a way that does not block the rest of the script. One
+# way to achieve this could be using the systems primary counter (perf) to compare time elapsed
+# in a similiar way to millis on the arduino
 
 transmit(func, throttle, str_pos)
 
-if start_timer == True: # If not continuous, then   stop after delay
+if timer_enabled == True: # If not continuous, then  stop after delay
 
-      time.sleep(run_time) # sleep 100ms + run_time
+      timer_current = perf_counter_ns()
 
-      stop()
+      if timer_current - timer_start > timer_duration:
 
-      start_timer = False
+         stop()
 
+         timer_enabled = False
+
+      
 
 #recieve() - need to add once I find a way to forward the measurements onto the webpage
 
