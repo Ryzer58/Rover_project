@@ -27,7 +27,8 @@ app = Flask (__name__, template_folder='web-app/', static_folder='web-app/static
 min_throttle = 0
 max_throttle = 0
 num_mot = 0
-throttle = 100
+throttle = 0
+throttle_level = 100
 direction = True
 
 motParam = [min_throttle, max_throttle, num_mot,]
@@ -37,7 +38,6 @@ serRight = 0
 serCentre = 0
 serLeft = 0
 str_pos = 30
-
 pan_pos = 90
 
 servoParam = [serCentre, serLeft, serRight]
@@ -46,10 +46,7 @@ servoLabel = ['Centre ','Max left ','Max right ']
 timer_enabled = True
 timer_start = 0
 timer_duration = 0 #Just a place holder for a counter yet to be implemented
-#arc_time = 1945 #todo time for the servo to swing 60 degree in microseconds (more use for automation rather than in manual mode)
 func = 0
-wait_time = 0
-speedLock = 0
 
 
 # Serial Port detection and configuration - First look for available devices (Still need to add proper error handling system)
@@ -93,9 +90,9 @@ serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
 
 # Data processing functions
 
-def transmit(data1, data2, data3):
+def transmit(function, param0, param1):
     
-    PiCommand = [str(data1),str(data2),str(data3)]
+    PiCommand = [str(function),str(param0),str(param1)]
     outGoing = (','.join(PiCommand) + '\n')
     piComm.write(outGoing.encode('utf-8'))
 
@@ -105,7 +102,8 @@ def recieve():
 
     return recievedData
 
-    #Once the dash board is working we can move onto processing incoming data
+# TODO - once we have got the control data to render correctly on the page with the
+# data automatically refreshing we can then worry about handling the return data
 
 
 def move_forward():
@@ -164,8 +162,8 @@ def stop():
 # Core movement controls 
 
 @app.route("/")
-def index( ):
-   return render_template("index.html", name = None)
+def index():
+   return render_template("index.html", name = None, direction=direction, acceleration=throttle)
 
 @app.route("/forward")
 def forward():
@@ -271,7 +269,7 @@ def mid_run():
    global timer_duration, timer_enabled
 
    print("Mid run")
-   timer_duration = 3000
+   timer_duration = 5000000000
    timer_enabled = True
 
    return render_template('index.html')
@@ -281,66 +279,56 @@ def short_time():
    global timer_duration, timer_enabled
 
    print("Short run")
-   timer_duration = 1000
+   timer_duration = 2000000000
    timer_enabled = True
    
    return render_template('index.html')
 
-# All Camera related controls (Yet to be implemented):
+# Camera panning controls (Not yet implemented on Arduino side):
 
-@app.route("/panlt") #Cam Servo control functions
+@app.route("/panlt")
 def panlf( ):
-   global pan_pos, wait_time
+   global pan_pos
 
    print("Panlt")
    pan_pos += 5
    if pan_pos < 135:
       pan_pos = 135
-
-   wait_time = 0.3
    
    return render_template("index.html", bearing=pan_pos)
 
 @app.route("/panrt")
 def panrt():
-   global pan_pos, wait_time
+   global pan_pos
 
    print("Panrt")
    pan_pos -= 5
    if pan_pos > 45:
       pan_pos = 45
-
-   wait_time = 0.3
-   
+  
    return render_template("index.html", bearing=pan_pos)
 
 @app.route ("/home")
 def home():
-   global pan_pos, wait_time
+   global pan_pos
 
    print("Home")
-
-   # To decide timings based on position
   
    return render_template("index.html", bearing=pan_pos)
 
 @app.route("/panfull_lt")
 def panfull_lt():
-   global pan_pos, wait_time
+   global pan_pos
 
    print("Pan full left")
-
-   wait_time = 0.6
    
    return render_template("index.html", bearing=pan_pos)
 
 @app.route("/panfull_rt")
 def panfull_rt():
-   global pan_pos, wait_time
+   global pan_pos
 
    print ("Pan full right")
-
-   wait_time = 0.6
    
    return render_template("index.html", bearing=pan_pos)
 
@@ -362,10 +350,11 @@ if timer_enabled == True: # If not continuous, then  stop after delay
          timer_enabled = False
 
       
-
 #recieve() - need to add once I find a way to forward the measurements onto the webpage
 
 if __name__ == "__main__" :
    app.run (host = 'localhost', port = 5000, debug = False)
+   
    # disable debug due to cause reset which cause intial setup to rerun which of course
    # will lead to it failing on the second run as the arduino will only issue this data once.
+   # Replace local host with either the IP address or the Hostname of the SBC.
