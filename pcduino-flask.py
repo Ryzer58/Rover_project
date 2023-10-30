@@ -18,7 +18,7 @@ import serial
 import board #Import the board profile from Blinka libraries
 import digitalio
 from adafruit_servokit import ServoKit #I2C servo shield libraries
-from pcduino import pwmSet
+import pwmio
 from flask import Flask, render_template, request
 
 app = Flask (__name__, static_url_path = '')
@@ -30,37 +30,33 @@ except IOError:
    print ("UART not enabled - not able to use GPS")
    
 
-#Motor 1 configuration - connect matching jumper on dir A header
+# Motor 1 configuration - connect matching jumper on dir A header
 dir_1 = digitalio.DigitalInOut(board.D2)
-#dir_1 = digitalio.DigitalInOut(board.D4)
-#dir_1 = digitalio.DigitalInOut(board.D7)
+# dir_1 = digitalio.DigitalInOut(board.D4)
+# dir_1 = digitalio.DigitalInOut(board.D7)
 dir_1.direction = digitalio.Direction.OUTPUT
 
-Throttle_1 = "pwm0" #Pin 5 Pcduino
+Throttle_1 = pwmio.PWMOut(board.D5, frequency=500, duty_cycle=0)
 
-#Motor 2 configuration - connect matching jumper on dir B header
-#dir_2 = digitalio.DigitalInOut(board.D8)
-#dir_2 = digitalio.DigitalInOut(board.D12)
-#dir_2 = digitalio.DigitalInOut(board.D13)
-#dir_2.direction = digitalio.Direction.OUTPUT
+# Motor 2 configuration - connect matching jumper on dir B header
+# dir_2 = digitalio.DigitalInOut(board.D8)
+# dir_2 = digitalio.DigitalInOut(board.D12)
+# dir_2 = digitalio.DigitalInOut(board.D13)
+# dir_2.direction = digitalio.Direction.OUTPUT
 
-#Throttle_2 = "pwm1" #Pin 6 Pcduino
+# Throttle_2 = pwmio.PWMOut(board.D6, frequency=500, duty_cycle=0)
 
 # Speed and drive control variables - remember to set pwm and directional control variables
-pwmSet.pulseDuration(Throttle_1, 400)
-pwmSet.pulseDuty(Throttle_1, 0) #start at a stationary position
-pwmSet.polarity(Throttle_1, 0)
-pwmSet.enable(Throttle_1, 1)
 speed_offset = 84
 run_time = 0.750
 
 
-#Variables for the main driving servo (Servo shield channel 0)
+# Variables for the main driving servo (Servo shield channel 0)
 right_dri = 60
 left_dri = 0
 centre_dri = 30
 
-#Variables for the camera moving servo (Servo shield channel 1)
+# Variables for the camera moving servo (Servo shield channel 1)
 right_pan = 45
 left_pan = 135
 centre_pan = 90
@@ -69,8 +65,8 @@ pan_servo = centre_pan
 dri_servo = centre_dri
 
 kit = ServoKit(channels=16)
-kit.servo[0].angle = centre_dri #Steering servo
-kit.servo[1].angle = centre_pan #Camera pan servo
+kit.servo[0].angle = centre_dri # Steering servo
+kit.servo[1].angle = centre_pan # Camera pan servo
 turn_offset = 0.166
 
 time.sleep (3) # A little dwell for settling down time
@@ -81,7 +77,7 @@ def index():
    return render_template ('index.html', name = None)
 
 
-#Directional controls
+# Directional controls
 
 @app.route("/forward")
 def forward():
@@ -151,8 +147,8 @@ def stop():
 
 # Camera operating controls
 
-@app.route("/panlt") #Cam Servo control functions
-def panlf ( ):
+@app.route("/panlt") # Cam Servo control functions
+def panlf():
    global pan_servo
 
    print ("Panlt")
@@ -210,16 +206,16 @@ def panfull_rt():
 def speed_low():
    global speed, turn_offset
 
-   speed = 42 #Calibrate according to motor used 
+   speed = 32767 # Calibrate according to motor used 
    turn_offset = 0.001
    time.sleep (0.150) # sleep 150ms
    return "ok"
 
-@app.route("/speed_mid") #speed control presets
+@app.route("/speed_mid") # speed control presets
 def speed_mid():
    global speed, turn_offset
 
-   speed = 84
+   speed = 39321
    turn_tm_offset = 0.166   
    time.sleep (0.150) # sleep 150ms
    return "ok"
@@ -228,7 +224,7 @@ def speed_mid():
 def speed_hi():
    global speed, last_direction, turn_offset
 
-   speed = 126
+   speed = 52428
    turn_offset = 0.332
    time.sleep (0.150) # sleep 150ms
    return "ok"
@@ -268,13 +264,13 @@ def go_forward(): # Motor drive functions
     global speed
     
     dir_1.value = True
-    pwmSet.pulseDuty(Throttle_1, speed)
+    Throttle_1.duty_cycle = speed
         
 def go_backward():
     global speed
 
     dir_1.value = False
-    pwmSet.pulseDuty(Throttle_1, speed)
+    Throttle_1.duty_cycle = speed
         
    
 
@@ -302,7 +298,7 @@ def sw_right():
    kit.servo[0].angle = dri_servo
 
 def halt():
-    pwmSet.pulseDuty(Throttle_1, 0)
+    Throttle_1.duty_cycle = 0
     kit.servo[0].angle = 90
 
 if __name__ == "__main__" :

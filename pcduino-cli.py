@@ -1,15 +1,15 @@
-#basic manual control test V1
+# basic manual control test V1.5
 
-#Hardware used
-#pcDuino V2 version
-#Adafruit Servo / PWM Shield
-#velleman Motor shield
-#Buck converter
-#Lipo battery
-#3D printed chasis
+# Hardware used
+# pcDuino V2 version
+# Adafruit Servo / PWM Shield
+# velleman Motor shield
+# Buck converter
+# Lipo battery
+# 3D printed chasis
 
-#gps - yet to be included
-#adxl - yet to be included
+# gps - yet to be included
+# adxl - yet to be included
 
 import time
 import sys
@@ -20,24 +20,25 @@ import digitalio
 import pwmio
 from adafruit_servokit import ServoKit
 
-#Motor 1 configuration - Match with the jumper set on dir A header, to control motor direction
-#dir_1 = digitalio.DigitalInOut(board.D2)
+# Motor 1 configuration - Match with the jumper set on dir A header, to control motor direction
+# dir_1 = digitalio.DigitalInOut(board.D2)
 dir_1 = digitalio.DigitalInOut(board.D4)
-#dir_1 = digitalio.DigitalInOut(board.D7)
+# dir_1 = digitalio.DigitalInOut(board.D7)
 dir_1.direction = digitalio.Direction.OUTPUT
 
-Throttle_1 = pwmio.PWMOut(board.D5, frequency=500, duty_cycle=0)
+Throttle_1 = pwmio.PWMOut(board.D5, frequency=500, duty_cycle=0) # PWMA header Velleman motor shield
 speed = 60
 
-#Motor 2 configuration - Match with the jumper set on dir B header, to control motor direction
-#dir_2 = digitalio.DigitalInOut(board.D8)
-#dir_2 = digitalio.DigitalInOut(board.D12)
-#dir_2 = digitalio.DigitalInOut(board.D13)
-#dir_2.direction = digitalio.Direction.OUTPUT
+# Motor 2 configuration - Match with the jumper set on dir B header, to control motor direction
+# dir_2 = digitalio.DigitalInOut(board.D8)
+# dir_2 = digitalio.DigitalInOut(board.D12)
+# dir_2 = digitalio.DigitalInOut(board.D13)
+# dir_2.direction = digitalio.Direction.OUTPUT
 
-# Throttle_2 = "pwm1" # Pcduino pin D6, On the velleman motor shield this brought out next to D5 on the PWMA
-# header therefore a jumper wire will need to bridge from the D6 pin to the PWMB header to be able to us the
-# second motor channel on the pcduino
+# Throttle_2 = pwmio.PWMOut(board.D6, frequency=500, duty_cycle=0) 
+# Unfortunately the Velleman motor shield brings out D6 on the same header as D5. Therefore we will
+# need a wire to bridge the connection to PWMB if we need to access the second motor channel on the
+# Pcduino.
 
 # Servo positions
 centre = 30
@@ -51,14 +52,14 @@ kit.servo[0].angle = pos
 # configure lighting controls
 Hd_lamps = digitalio.DigitalInOut(board.D8)
 Hd_lamps.direction = digitalio.Direction.OUTPUT
-#Ind_Lft = digitalio.DigitalInOut(board.D9)
-#Ind_Lft.direction = digitalio.Direction.OUTPUT - To do, think of way to make blink
-#Ind_rt = digitalio.DigitalInOut(board.D10)
-#Ind_rt.direction = digitalio.Direction.OUTPUT
-#Rear = digitalio.DigitalInOut(board.D11)
-#Rear .direction = digitalio.Direction.OUTPUT
+# Ind_Lft = digitalio.DigitalInOut(board.D9)
+# Ind_Lft.direction = digitalio.Direction.OUTPUT - To do, think of way to make blink
+# Ind_rt = digitalio.DigitalInOut(board.D10)
+# Ind_rt.direction = digitalio.Direction.OUTPUT
+# Rear = digitalio.DigitalInOut(board.D11)
+# Rear .direction = digitalio.Direction.OUTPUT
 
-dir_1.value = True #set throttle to in Direction A
+dir_1.value = True # set throttle to in Direction A
 
 def readchar():
     fd = sys.stdin.fileno()
@@ -86,7 +87,7 @@ def readKey(getchar_fn=None):
     if ord(c2) != 0x5b:
         return c2
     c3 = getchar()
-    return chr(0x10 + ord(c3) - 65) #16=Up, 17=Down, 18=Right, 19=Left arrows
+    return chr(0x10 + ord(c3) - 65) # 16=Up, 17=Down, 18=Right, 19=Left arrows
 
 
 try:
@@ -100,7 +101,7 @@ try:
             Throttle_1.duty_cycle = 0
 
         elif keyp == 's' or ord(keyp) == 17:
-            dir_1.value = False #set gpio Low to change direction
+            dir_1.value = False # set gpio Low to change direction
             print('Reverse')
             Throttle_1.duty_cycle = speed
             time.sleep(1)
@@ -112,7 +113,7 @@ try:
             if pos == left:
                 print('max limit reached')
             kit.servo[0].angle = pos
-            time.sleep(0.5) #give servo time to reach position
+            time.sleep(0.5) # give servo time to reach position
             print('turn left', pos)
 
         elif keyp == 'd' or ord(keyp) == 18:
@@ -142,7 +143,7 @@ try:
             Throttle_1.duty_cycle = 0
             raise KeyboardInterrupt
                
-        elif keyp == 'l': #Toggle On/Off the Main head lamps
+        elif keyp == 'l': # Toggle On/Off the Main head lamps
             if Hd_lamps == True:
                 Hd_lamps.value = False
             else:
