@@ -17,7 +17,7 @@ import tty
 import termios
 import board
 import digitalio
-from pcduino import pwmSet # currently used for PWM output
+import pwmio
 from adafruit_servokit import ServoKit
 
 #Motor 1 configuration - Match with the jumper set on dir A header, to control motor direction
@@ -26,7 +26,7 @@ dir_1 = digitalio.DigitalInOut(board.D4)
 #dir_1 = digitalio.DigitalInOut(board.D7)
 dir_1.direction = digitalio.Direction.OUTPUT
 
-Throttle_1 = "pwm0" # Pcduino hardware PWM channel (pin D5). 
+Throttle_1 = pwmio.PWMOut(board.D5, frequency=500, duty_cycle=0)
 speed = 60
 
 #Motor 2 configuration - Match with the jumper set on dir B header, to control motor direction
@@ -58,11 +58,6 @@ Hd_lamps.direction = digitalio.Direction.OUTPUT
 #Rear = digitalio.DigitalInOut(board.D11)
 #Rear .direction = digitalio.Direction.OUTPUT
 
-
-pwmSet.pulseDuration(Throttle_1, 400) # Enter frequecency (smallest value is 200hz)
-pwmSet.pulseDuty(Throttle_1, 0) #start at a stationary position
-pwmSet.enable(Throttle_1, 1)
-
 dir_1.value = True #set throttle to in Direction A
 
 def readchar():
@@ -76,8 +71,8 @@ def readchar():
     finally:
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
     if ch == '0x03':
-       pwmSet.pulseDuty(Throttle_1, 0)
-       pwmSet.enable(Throttle_1, 0)
+       
+       Throttle_1.duty_cycle = 0
  
        raise KeyboardInterrupt
     return ch
@@ -96,53 +91,58 @@ def readKey(getchar_fn=None):
 
 try:
     while True:
-          keyp = readKey()
-          if keyp == 'w' or ord(keyp) ==16:
-               dir_1.value = True
-               print('Forward')
-               pwmSet.pulseDuty(Throttle_1, speed)
-               time.sleep(1)
-               pwmSet.pulseDuty(Throttle_1, 0)
+        keyp = readKey()
+        if keyp == 'w' or ord(keyp) ==16:
+            dir_1.value = True
+            print('Forward')
+            Throttle_1.duty_cycle = speed
+            time.sleep(1)
+            Throttle_1.duty_cycle = 0
 
-          elif keyp == 's' or ord(keyp) == 17:
-                 dir_1.value = False #set gpio Low to change direction
-                 print('Reverse')
-                 pwmSet.pulseDuty(Throttle_1, speed)
-                 time.sleep(1)
-                 pwmSet.pulseDuty(Throttle_1, 0)
+        elif keyp == 's' or ord(keyp) == 17:
+            dir_1.value = False #set gpio Low to change direction
+            print('Reverse')
+            Throttle_1.duty_cycle = speed
+            time.sleep(1)
+            Throttle_1.duty_cycle = 0
 
-          elif keyp == 'a' or ord(keyp) == 19:
-                 if pos > left:
-                    pos = pos - 5
-                 if pos == left:
-                    print('max limit reached')
-                 kit.servo[0].angle = pos
-                 time.sleep(0.5) #give servo time to reach position
-                 print('turn left', pos)
+        elif keyp == 'a' or ord(keyp) == 19:
+            if pos > left:
+                pos = pos - 5
+            if pos == left:
+                print('max limit reached')
+            kit.servo[0].angle = pos
+            time.sleep(0.5) #give servo time to reach position
+            print('turn left', pos)
 
-          elif keyp == 'd' or ord(keyp) == 18:
-                 if pos < right:
-                    pos = pos + 5
-                 if pos == right:
-                    print('max limit reached')
-                 kit.servo[0].angle = pos
-                 time.sleep(0.5)
-                 print('turn right', pos)
+        elif keyp == 'd' or ord(keyp) == 18:
+            if pos < right:
+                pos = pos + 5
+            if pos == right:
+                print('max limit reached')
+            kit.servo[0].angle = pos
+            time.sleep(0.5)
+            print('turn right', pos)
 
-          elif keyp == '.' or keyp == '>':
-                 speed = min(100, speed+10)
-                 print ('Accel', speed)
+        elif keyp == '.' or keyp == '>':
+            if speed <= 65535:
+                print ('Accelerating', speed)
+                speed = speed + 2048
+            else:
+                print('At Max speed')
 
-          elif keyp == ',' or keyp == '<':
-                 speed = max(0, speed-10)
-                 print ('Deccel', speed)
+        elif keyp == ',' or keyp == '<':
+            if speed > 26214:
+                print ('Deccelerating', speed)
+                speed = speed - 2048
+            else:
+                print('At Min speed')
           
-          elif keyp == 'k' or ' ':
-               pwmSet.pulseDuty(Throttle_1, 0)
-               pwmSet.enable(Throttle_1, 0)
-               raise KeyboardInterrupt
+        elif keyp == 'k' or ' ':
+            Throttle_1.duty_cycle = 0
+            raise KeyboardInterrupt
                
-          elif keyp == 'l': #Toggle On/Off the Main head lamps
+        elif keyp == 'l': #Toggle On/Off the Main head lamps
             if Hd_lamps == True:
                 Hd_lamps.value = False
             else:
@@ -151,5 +151,4 @@ try:
 
 except KeyboardInterrupt:
     raise KeyboardInterrupt
-    
     sys.exit()

@@ -1,16 +1,19 @@
-# Pcduino PWM polarity correction - In the pwm controller registers intial state 
-# when the polarity bit is set to 0 the signal will be output as active low,
-# which is not ideal for the driving motors as the will begining running at full
-# speed uncontrollably. This is common to both the A10 and A20. This leaves us 
-# with two options for setting the polarity to active high which are pwmsysfs 
-# framework or write to registers directly via devmem2. In testing I didnt notice 
-# much different due to the main flaw being that the adjustment is not enacted 
-# until the system is nearly full booted up which takes around 2 mins or so. I 
-# decided to go with the pwmsysfs being more easier to use even if it is a two 
-# step process. One possible solution to reslove this is to alter the motor 
-# supply so that it is only powered up once the modifications have taken place.
-# A second would be a custom driver at the uboot stage that configures the
-# polarity before it is handed over to the kernel
+# Pcduino PWM polarity correction - In the PWM controller register a single bit
+# is used to control the polarity of the signal output. In its default state of 
+# 0 the signal is active low. This is ok for driving something such as LCD
+# Backlight but not motors, resulting in the motor spinning uncontrollably at
+# full speed. This seems to be the case for both the Allwinner A10 and A20.
+# This script is designed to set the PWM into the 'normal' polarity state as
+# soon as the system has booted, which unfortunately takes over a minute.
+# This into account there was unoticeable difference between setting the bit
+# directly with devmem tool versus simply using two steps involved under the
+# pwmsysfs framework. 
+# In future a possible solution would be to alter/upgrade the motor controller 
+# board to allow us to simply isolate the motor power supply until the polarity 
+# bit has been set.
+# A second would be customise the driver as a more advance work around although
+# this could risk breaking compatibility with the pwmsysfs framework which we
+# would like to retain.
 
 CHANNEL=0
 
