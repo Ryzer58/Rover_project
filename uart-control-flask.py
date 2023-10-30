@@ -2,7 +2,7 @@
 #
 # Wifi/Web driven Rover -- Hybrid version
 #
-# Written by Ryzer - 2021/2022 (v1.0)
+# Written by Ryzer - 2021/2022 (v1.2)
 #
 # Uses pyserial and Flask
 # Adafruit Blinka may be used if going down the approuch of incorprating less time dependant functions
@@ -14,7 +14,7 @@
 # 
 
 import sys
-from time import perf_counter_ns
+from time import perf_counter_ns, sleep
 import serial
 from serial.tools import list_ports
 from flask import Flask, render_template, request
@@ -24,37 +24,30 @@ app = Flask (__name__, template_folder='web-app/', static_folder='web-app/static
 # Rover operating parameters to be populated by information collected from Arduino like that used in the intial
 # cli based program
 
-min_throttle = 0
-max_throttle = 0
-num_mot = 0
 throttle = 0
 throttle_level = 100
 direction = True
+motRange = (70, 255, 1) # Min, Max, Number of motors attached
 
-motParam = [min_throttle, max_throttle, num_mot,]
-motLabel = ['Min throttle ', 'Max throttle ', 'Motors ']
-
-serRight = 0
-serCentre = 0
-serLeft = 0
 str_pos = 30
-pan_pos = 90
-
-servoParam = [serCentre, serLeft, serRight]
-servoLabel = ['Centre ','Max left ','Max right ']
+pan_pos =  90 # not yet tested
+servoRange = (30, 0, 60) # Centre, Left, Right
 
 timer_enabled = True
 timer_start = 0
-timer_duration = 0 #Just a place holder for a counter yet to be implemented
+timer_duration = 0
 func = 0
 
+rover_param = ""
+labels = ("Min", "Max", "Attached", "Centre", "Left", "Right")
 
-# Serial Port detection and configuration - First look for available devices (Still need to add proper error handling system)
+
+# Serial Port detection mechanism (wip):
+# Scan attached serial devices looking for an Arduino or similar/microcontroller
+# if found we then assig it to our link variable
 
 myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
-print (myports)
-
-arduLink = '/dev/ttyS1'
+arduLink = ' '
 
 for port in myports:
     if '/dev/ttyACM0' in port:
@@ -63,32 +56,49 @@ for port in myports:
     elif '/dev/ttyUSB0' in port:
         arduLink = '/dev/ttyUSB0'
         print("USB device found - Most likely Nano/clone")
+
+if arduLink == ' ':
+   print("Microcontroller not found, exiting")
+   sys.exit()
+
+else:
         
-piComm = serial.Serial(arduLink,19200,timeout = 2)
-piComm.flush()
-rover_param = piComm.readline().decode('utf-8')
-rover_param = rover_param.split("; ")
-motor_range, servo_range = rover_param
+   piComm = serial.Serial(arduLink,19200,timeout = 2)
+   piComm.flush()
 
-motData= motor_range.lstrip('Motor: ') # The first string sent will contain the motor data as defined in the Arduino setup function
-motData = motData.split(",")
-print("Motor Configuration: ")
-for m in range(len(motData)):
-    motParam[m] = int(motData[m])
-    print(motLabel[m] + str(motData[m])) #Print back the retrieved value
+# Write out configuration data
 
-servoData = servo_range.lstrip('Servo: ') # The second string will contain the Servo constraints
-servoData = servoData.split(",")
-print("Servo configuaration: ")
-for s in range(len(servoData)):
-    servoParam[s] = int(servoData[s])
-    print(servoLabel[s] + str(servoData[s]))
+for m in range(len(motRange)):
     
-min_throttle, max_throttle, num_mot = [motParam[i] for i in [0 , 1, 2]]
-serCentre, serLeft, serRight = [servoParam[n] for n in [0, 1, 2]]
+   rover_param = rover_param + str(motRange[m])
+    
+   if m < 2:
+         
+      rover_param = rover_param + ","
+    
+   print(labels[m] + str(motRange[m])) #Print back the retrieved value
+
+rover_param = rover_param + ";"
+
+for s in range(len(servoRange)):
+   
+   rover_param = rover_param + str(servoRange[s])
+
+   if s < 2:
+       
+      rover_param = rover_param + ","
+       
+   print(labels[s + 3] + str(servoRange[s]))
 
 
-# Data processing functions
+rover_param = rover_param + "\n"
+
+piComm.write(rover_param.encode('utf-8'))
+
+sleep(0.2)
+
+piComm.read
+
 
 def transmit(function, param0, param1):
     
@@ -109,7 +119,7 @@ def recieve():
 def move_forward():
    global throttle, throttle_level, direction
 
-   if direction != True and throttle > min_throttle:
+   if direction != True and throttle > motRange[0]:
 
       stop()
       
@@ -122,7 +132,7 @@ def move_forward():
 def move_reverse():
    global throttle, direction
 
-   if direction != False and throttle > min_throttle:
+   if direction != False and throttle > motRange[0]:
 
       stop()
 
@@ -133,19 +143,19 @@ def move_reverse():
    return direction, throttle
 
         
-def bear_left():  
-   global str_pos, serLeft
+def move_left():  
+   global str_pos, servoRange
 
-   if str_pos > serLeft:
+   if str_pos > servoRange[1]:
       
       str_pos -= 5
    
    return str_pos
            
-def sw_right():
-   global str_pos, serRight
+def move_right():
+   global str_pos, servoRange
 
-   if str_pos < serRight:
+   if str_pos < servoRange[2]:
 
       str_pos += 5
 
@@ -198,7 +208,7 @@ def left():
    global num_mot
 
    print("Left")
-   steer_pos = bear_left()
+   steer_pos = move_left()
    
    return render_template('index.html', steering=steer_pos)
 
@@ -207,7 +217,7 @@ def right():
    global num_mot
 
    print("Right")
-   steer_pos = sw_right()
+   steer_pos = move_right()
 
    return render_template('index.html', steering=steer_pos)
 
