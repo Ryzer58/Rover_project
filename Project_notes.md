@@ -1,38 +1,44 @@
 Rover Project notes:
 
-Hardware notes-
-SBC - Raspberry Pi or similar with GPIO capabilities
-Arduino microcontroller - designed around Arduino Uno but will later shift to a nano or Adafruit feather
-Generic DC motor (possibly replaced with brushless in future)
+Hardware notes:
+SBC - Raspberry Pi but also tested on the Pcduino2. It should work on any board that has suitable IO capabilities
+Microcontroller - Arduino Uno but later plan to switch to Adafruit feather due to its more compact for factor or maybe the Arduino Nano
+Motor - Generic DC motor (possibly replaced with brushless in future)
+Velleman motor shield - only requires 2 pins per motor channel (direction and pwm out)
 Tower Pro Mg995 Servo for steering
-2 * Buck converters - Supply for the SBC and another for the motors)
-Velleman motor shield - only requires 2 pins per motor
-Lipo battery
+Detection - 6 * HC-SR04 Ultrasonic sensors
+Power - 3 Cell LIPO battery
+2 * Buck converters - Supply for the SBC and another for the motors
 3D printed Chassis - Optional, can be work with wheeled steering frame that support a servo for forward steering
 Trusty Webcam (3mp) - although any usb camera or even the Pi camera could be substitued as it is merely running through mpjg-streamer
 
-Software notes-
+
+Software notes:
 Flask web server - Todo figure out how to integrate with Apache web server
-Arduino
+Arduino ide - optional, for making quick fixes.
+Adafruit Blinka/Circuitpython
 Mjpg-streamer - as mentioned above (Add camStream.sh to start to run as a service at boot in the 'init' folder)
 Pyserial
+Adafruit Servo kit - When using the Pcduino 2 the hardware PWM is not capble of controlling a Servo. Therefore control is managed by the shield using I2C communication
 
-Pcduino version only-
-
-Adafruit ciruitPython
-Adafruit Servo kit
 
 The frame:
-This is currently a WIP in progress, in future I may decide to upload the documents to either github or Thingiverse. Admittedly it would probably been easier to start with a pre-made kit but very rarely have I come across a frame with a steering control, usually they are just
-differential drive. Parts are currently printed out of PLA on Vertex K8400. To keep within the limits of the print bed, the model was broken into sections. These sections are joined together with 2mm screws. To overcome issues with earlier design 65mm diameter rubber wheels are used, connected to a 3mm drive shaft at the back. They appear to have reasonably good traction but sometimes struggle at low speed on carpet and I have yet to test handling outside. The gears used are part of the MFA Come drills kit. The drive assembling being the current area that is actively being tweaked with. The front wheels are simply steered by the main servo. currently there is no suspension so to speak of other than some springs on the front wheels that provide partial dampening.
+This is currently a WIP in progress, in future I may decide to upload the documents to either github or Thingiverse. Admittedly it would probably been easier to start with a pre-made kit but very rarely have I come across a frame with a steering control, usually they are just based around differential drive. I have used the Velleman K8400 to print out the majority of parts with PLA fliment. As some parts ended up becoming fairly large they have been divide into sections to fit within the limits of the
+Printed bed. The remainder parts come from the MFA Come drills kit and from Amazon. Parts are bound with 2mm diameter screws of varying lengths. The steel shafts used in the drive assembly are 3mm diameter. For now the Servo is mounted directly above the steering rack but this may change when proper suspension is introduced in the next reprint. The driver assembly is currently being reworked to support the upgrade to a lager drive motor. The problem with the previous was that outside of the control issues
+it appear to struggle running on soft surfaces, granted this may also be in part due the level of friction on the wheels.
+
 
 The Project:
 
-This is technical a combination of V1 and V2. The original project contain within this repo initially centred around using the Pcduino with some basic motor function and simple web interface featuring video feedback through a usb webcam mounted to the front of the rover. It required an adafruit Servo shield to control the main steering servo over I2C due to PWM's hardware limitations, while the main driving motor was controlled directly by one of the Pcduino's hardware PWM pins via the PWM sysFS. At the time I found it to be difficult to get the output duty cycle to vary properly. Connecting to an oscilloscope it was trail and error
-to input a value that would produce the desired frequency, worser still I could not get the duty cycle to behave as expected and it would also end up causing the main frequency to jump.
-This was not ideal for controlling a motor where the resultant value would be to high a frequency for the motor to turn. Evidently this was symptoms of an underlying issue with the driver.
-For the web interfaces it was just a case of find numbers that worked near enough to what I was expecting and using to create a set of predefine profiles that where 'slow', 'medium' and 'fast'.
-Examining the driver as part of a separate goal of my to learn more about the internals of Linux, I was able to identify and fix the issue so that overall the PWM behaves as expected with the inputted period value now result in the desired frequency. The does remain one minor issue to work around but in the case it is due to how the hardware is actually formatted. In the default state, the polarity of any PWM channel is active low. This means that when no signal is being generated the pin will linger high, unfortunately a side effect of this will be that It will cause the motor to move until the pin is set to a low state. A short term fix is a small polarity correction script to flip the palority but this wont be called until later on the in the boot process so the motor will run continuous for a minute or so until this has been executed. Ideally this is another factor that will need to be accounted for in the driver in future or via an additional pre-configuration driver situated in u-boot.
+This project was started with the goal of seeing how feasible it would be to use a Pcduino 2 as the brains of a Rover. While not exactly an Arduino, mostly just copying the form factor. The oirginal OS did have it's own version of the Arduino IDE but I was unable to get it to work with external libraries plus the OS itself is now very outdate. It allowed for addtional pins to be used as PWM at the expense of CPU cycles. Running Armbian OS allowed it to run more up to date software althogh it may be offical EOL
+the buildscriptsd make it easy to produce an up to date OS. Using Adafruit Blinka made it very easy to inferface with external hardware. The only other alternative is to use Raspberry Pi that has masses more support. So far it seems able to handle running a
+web server as well as streaming video output from the USB webcam.
 
-In this next stage of the project I have including an Arduino microcontroller to handle certain repeatitive tasks. At the moment this involved driving the motors and taking ultrasonic sensor readings. This Allow the SBC to focus more complex task such as obstacle avoidance. Communication will be carried out over UART at a baud rate of 19200, although I may look into switching to I2C in future. Currently there is only baic communication, where the Python program will write values to the Arduino and it will transmit the intial working values at the start of the program. Now I am just starting to work on the integration of ultrasonic sensors.
-Aside from the PWM the Pcduino does have a few other problems to address which may be resolved in time along with being much less powerful than the more popular Raspberry Pi. Going forward I will probably be working the Raspberry Pi 3 more but occasionally revisiting the Pcduino. The advantages of the Pcduino compared to the PI is the greater number of uart ports which are much more compacted than USB ports although you have to be cautious of the voltage difference.
+The first major challenge was with the PWM, while it has 2 channels the combination of prescalers and 8-bit resolution meant that its ablity to driver a servo was extremly limted. To Solve this the adafruit Servo shield was added, communicating with the Pcduino
+over I2C. Now I had at atleast drivable Rover but had problems adjusting the speed of the drive motor. By a process of trail and error I was able to find values that would near enough yield the desired result but the speed would not scale linearly. Another draw back was the was the polarity configuration. By default the state is active low, meaning the pin will be held high. A basic but not ideal solution to this was to create an rc.local script to export the pin and set the polarity. Later on I discovered that the problem was with how the driver handle the hardware. It is design for numerous Allwinner chips that share the same underlying PWM hardware registers. Except from the A10 they all suppotrt 16-bit resolution however the driver assumed all SOCs support this resolution. It resulted in situtation where whatever was written to the period regsiter, the upper 8-bits are simply ignore resulting in unexpected behaviour. To rectify this the driver need to be patched so that in the case of the A10 it would only write into the lower 8-bits for both the total cycles and active duty. The patch was applied to a rebuilt kernel. Further improvements could be achieved in either hardware or software. The hardware option would invovle withholding power from the motors until the PWM has been configure correctly, using an additional gpio to toggle the supply. The software solution requires additional tweaks to the driver functionality that could allow for polarity to be assigned within the device tree.
+
+The second challenge was configuring a web control interface afer passing the test of the basic control programme which is controlled purely by keypresses. They easy part was getting the video stream displayed on the webpage thanks to mjpeg-streamer running in the backgroud. The problematic part which still is in need of improvement was the position of elements on the page to match the intended layout. Based on early experiments a set of predefine speed values have been assigned to 'radio' buttons for selection which
+cover 'slow', 'medium' and 'fast'. This next stage here will be instead switch to a sliding bar to act more like a conventional accelerator aside from this other improvements are just asthetics.
+
+Introduce an Arduino microcontroller as a much easier solution to problems relating to PWM, along with sensor readings. Communications take place over uart at a baud rate of 19200 but in future I may consider swicthing over to SPI depending on what situational
+challenges arise. Data is sent in the format of Command Number, Data1, Data2. For now the command number just sets the direction of the Rover but will be expanded later. To allow the Rover to behave more autonomously an array of 3 distance sensors has been added to the front and Rear of the Rover body. This is the current goal being proactively worked.
