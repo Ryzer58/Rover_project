@@ -1,12 +1,13 @@
 Rover Project notes:
 
-Hardware notes:
-SBC - Raspberry Pi but also tested on the Pcduino2. The end goal is for a flexible approuch
-that can easily be adapted to work any SBC
+Hardware:
+SBC - Intially I intended for this project to work with the Pcduino 2 but it will work with the Raspberry Pi as well. It should work with an SBC that is currently supported by Adafruit Blinka by just adjusting the pins used.
 Microcontroller - Arduino Uno (Atmega328) but later plan to switch to Adafruit feather due 
 to the more compact for factor or maybe the Arduino Nano
-Motor - Generic DC motor Brushed motor
-Velleman motor shield - only requires 2 pins per motor channel (direction and pwm out)
+Motor - Generic 12V DC Brushed motor
+Velleman motor shield - This simple shield on requires a direction and PWM pin compared to some
+motor shields that need two control pins for each motor. A disadvantage is that there is no pass
+through for the I2C pins
 Servo - Tower Pro Mg995, if using 1 it is always allocated to steering first unless the 2 
 motor configuration is used.
 Detection - 6 * HC-SR04 Ultrasonic sensors
@@ -16,15 +17,13 @@ motors. Ideally the sensors should aslo have their own isolated supply.
 Chasis - 3D printed Chassis, or use a pre-built frame. This origionally intended to be used 
 with a rack and pinion system but will be adapted to support differential drive as the next 
 milestone.
-Camera - Trusty Webcam (3mp), although any usb camera or Pi camera module if using the 
-Raspberry 
-Adafruit Servo/PWM Shield - If using just an SBC on its own, it may have limited PWM capable 
-like the Pcduino2 then it is best to have external hadware to control any attached Servos.
-The Shield is communicated with via I2C.
+Camera -  USB Trusty Webcam(3mp). If using the Pi then we have the option of using the dedicated camera. 
+Adafruit Servo/PWM Shield or HAT (optional) - SBC's tend to have a a limited number of PWM channels or as I found out on the Pcduino 2 it has limitated capabilities therefore this hand for Servo which require precise timmings. It uses a PCA9685 which communicates over I2C.
 
 
-Software notes:
-Flask web server - (WIP, currently has a basic working interface)
+Software:
+Flask web server - This is still a WIP, we currently have a working control interface with integrated camera feed. What still needs to be done is including a proper feedback mechanism
+which retruns the throttle power level and servo position.
 Arduino IDE
 Adafruit Blinka/Circuitpython - Makes it easy to interface with external components
 Adafruit Servo kit - A library to allow us to interface with our servos
@@ -55,7 +54,7 @@ to slip.
 
 The Project:
 
-This project was started with the goal of seeing how feasible it would be to use a Pcduino 2 as the brains of a Rover. While not exactly an Arduino, mostly just copying the form factor. The oirginal OS did have it's own version of the Arduino IDE but I was unable to get it to work with external libraries plus the OS itself is now very outdate. It allowed for addtional pins to be used as PWM at the expense of CPU cycles. Running Armbian OS allowed it to run more up to date software althogh it may be offical EOL
+The project started with the aim of seeing how feasible it would be to have a Pcduino controlled Rover. The second core objective was to make it Autonomous with a manual overide While not exactly an Arduino, mostly just copying the form factor. The oirginal OS did have it's own version of the Arduino IDE but I was unable to get it to work with external libraries plus the OS itself is now very outdate. It allowed for addtional pins to be used as PWM at the expense of CPU cycles. Running Armbian OS allowed it to run more up to date software althogh it may be offical EOL
 the buildscriptsd make it easy to produce an up to date OS. Using Adafruit Blinka made it very easy to inferface with external hardware. The only other alternative is to use Raspberry Pi that has masses more support. So far it seems able to handle running a
 web server as well as streaming video output from the USB webcam.
 
@@ -68,3 +67,5 @@ cover 'slow', 'medium' and 'fast'. This next stage here will be instead switch t
 Introduce an Arduino microcontroller as a much easier solution to problems relating to PWM, along with sensor readings. Communications take place over uart at a baud rate of 19200 for the time being. Other options I may look into is communicating over SPI, possibly introducing a second microcontroller if need. The Rover seemed to struggle on softer surfaces so to overcome this the old motor has 
 been replaced with a much larger one.
 Currently Data with the exeception of setup is sent in the format of Command Number, Data1, Data2. For now the command number just sets the direction of the Rover but have started overhauling to cover over functions. To allow the Rover to behave more autonomously an array of 3 distance sensors has been added to the front and Rear of the Rover body. This is the current goal being proactively worked.
+
+Once the intial testing has been carried out on the sensors then we can move onto the implementation of a proper PID (Remember this is  Portional, Derivative, Integral) control mechanism to fine tune the movement of the rover.
