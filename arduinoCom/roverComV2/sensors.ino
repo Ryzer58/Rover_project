@@ -14,17 +14,18 @@ uint8_t array_pos[3]={};
 bool colAlert;
 bool out_range;
 
-NewPing for_array[SONAR_NUM] = {      // Front facing sensors.
-  NewPing(12, 12, MAX_DISTANCE),      // Right
-  NewPing(10, 10, MAX_DISTANCE),      // Centre
-  NewPing(8, 8, MAX_DISTANCE),        // Left
-};
+NewPing for_array[ARRAY_NUM][SONAR_NUM] = {{ NewPing(12, 12, MAX_DISTANCE), NewPing(10, 10, MAX_DISTANCE), NewPing(8, 8, MAX_DISTANCE) },
+                                          {NewPing(6, 6, MAX_DISTANCE), NewPing(3, 3, MAX_DISTANCE), NewPing(2, 2, MAX_DISTANCE)}};
 
+
+/*
 NewPing rear_array[SONAR_NUM] = {     //Rear facing sensors
   NewPing(6, 6, MAX_DISTANCE),     
   NewPing(3, 3, MAX_DISTANCE),      
   NewPing(2, 2, MAX_DISTANCE),      
 };
+
+*/
 
 
 /*
@@ -42,111 +43,60 @@ NewPing rear_array[SONAR_NUM] = {     //Rear facing sensors
 
 void scanning(){
  
-  if (dir == true){ //Use forward facing sonar(s)
+  if(act_sensor < 3){
 
-    if(act_sensor < 3){
+    time_since = millis();
 
-      time_since = millis();
+    if(time_since - last_ping >= ping_time){
 
-      if(time_since - last_ping >= ping_time){
+      array_pos[act_sensor] = for_array[dir][act_sensor].ping_cm(); // Use direction to correctly probe the corresponding array
 
-        array_pos[act_sensor] = for_array[act_sensor].ping_cm();
+      /* if(array_pos[act_sensor] <= MIN_UPPER and array_pos[act_sensor] >= MIN_LOWER){
+       *
+       *
+       *   colAlert = true; //Doesnt currently do anything but the plan is that this acts as a fail safe
+       *                //should the SBC stop fail to send the stop command
+       * 
+       *}
+       */
 
-        
+      if (array_pos[act_sensor] == 0){
 
-        /* if(array_pos[act_sensor] <= MIN_UPPER and array_pos[act_sensor] >= MIN_LOWER){
-         *
-         *
-         *   colAlert = true; //Doesnt currently do anything but the plan is that this acts as a fail safe
-         *                //should the SBC stop fail to send the stop command
-         * 
-         *}
-         */
-
-        if (array_pos[act_sensor] == 0){
-
-          out_range = true;
-          array_pos[act_sensor] = MAX_DISTANCE;
+        out_range = true;
+        array_pos[act_sensor] = MAX_DISTANCE;
 
         }
 
-        else{
+      else{
 
-          out_range = false;
+        out_range = false;
 
-        }  
+      }  
 
-        act_sensor++;
+      act_sensor++;
 
-        last_ping = time_since;
-      }
-
+      last_ping = time_since;
     }
 
-  }
- 
-
-  else{ //Switch to the rear facing ultrasonic array
-
-    if(act_sensor < 3){
-
-      time_since = millis();
-
-      if(time_since - last_ping >= ping_time){
-
-        array_pos[act_sensor] = rear_array[act_sensor].ping_cm();
-
-        /* if(array_pos[act_sensor] <= MIN_UPPER and array_pos[act_sensor] >= MIN_LOWER){
-         *
-         *  colAlert = true;
-         *  
-         *}
-         */
-
-        if (array_pos[act_sensor] == 0){
-
-          out_range = true;
-          array_pos[act_sensor] = MAX_DISTANCE;
-
-        }
-
-        else{
-
-          out_range = false;
-
-        }  
-
-        act_sensor++;
-
-        last_ping = time_since;
-
-
-      }
-
-    }
-        
   }
 
   /*
-   * The only slight issue with the current storing distance data to single array is that reading could become muddled
-   * when we change direction mid way through a sweep
+   * Broadcast the sensor readings back to the SBC but be cautious not to flood the serial port as general diagnostics data to 
+   * cap this we add in time for how often data is relay back.
    * 
    */
 
-  if(incoming_data  == true){
+  if(senRead  == true){
 
     check_time = millis();
 
     if(check_time - last_scan >= scan_now)
     {
 
-
       transmit(array_pos[0], array_pos[1], array_pos[2]);
-      incoming_data = false;
+      senRead = false;
 
-
-
-    last_scan = check_time;
+      last_scan = check_time;
 
     }
   }
