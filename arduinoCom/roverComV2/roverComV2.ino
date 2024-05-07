@@ -36,13 +36,27 @@ const uint8_t MOTA_PWM = 5; //3,6 - PWMA
 // const uint8_t MOTB_DIR = 8; //12,13 - DIRB
 // const uint8_t MOTB_PWM = 9; //10,11 - PWMB
 
-// Motor throttle range - create a default range which we can adjust from SBC side via a command
-
 uint8_t MIN_THROTTLE = 75;
-const uint8_t MAX_THROTTLE = 255;
+uint8_t MAX_THROTTLE = 255;
 uint8_t throttle;
 bool dir;
 
+/* Once we recieve the startup command for the SBC we then need to return the Rover 
+ * chasis configuration. It needs to be informed how many motors and servo are used as
+ * well as how the are roughly positioned.
+ *  
+ * 0x0 - Single rear wheel drive motor with steering servo 
+ * 0x1 - Single forward wheel drive motor with steering servo
+ * 0x2 - Single rear wheel drive motor with steering and camera pan servo
+ * 0x3 - Single forward wheel drive motor with steering and camera pan servo
+ * 0x4 - Dual motor, right side defined first
+ * 0x5 - Dual motor, left side defined first
+ * 0x6 - Dual motor, first motor right and a camera pan servo
+ * 0x7 - Dual motor, first motor left and a camera panning servo
+ *  
+ */
+   
+#define ROVER_ID 0x0
 
 /*------------------------------------------------------------------------------------------
  * SG995 Servo configuration - Ensure that the servo arc does not exceed the physical
@@ -53,10 +67,10 @@ bool dir;
  */
 
 Servo str;              
-const uint8_t CENTRE = 30;
-const uint8_t MAX_LEFT = 0;    
-const uint8_t MAX_RIGHT = 60;
-const uint8_t angle = CENTRE;
+uint8_t CENTRE = 30;
+uint8_t MAX_LEFT = 0;    
+uint8_t MAX_RIGHT = 60;
+uint8_t angle = CENTRE;
 
 //Camera positioning (if used) - not yet implemented:
 //Servo cam;
@@ -109,36 +123,20 @@ void setup() {
   while(!Serial);
   /* For Lenardo board and similiar we need to force a wait for incoming serial */
 
-  /* Once we recieve command for the SBC we then send the basic Rover configuration.
-   * start with stating how many motors attached and how they are setup by passing a 
-   * configuration number. followed by repeating this for the servo(s).
-   * 
-   * Motor configuration options:
-   * 0 = straight drive 
-   * 1 = differential drive right motor
-   * 2 = differential drive left motor
-   * 
-   * Servo configuration options:
-   * 
-   * 0 = rack and pinion steering
-   * 1 = camera panning servo
-   * 2 = camera tilting servo
-   *  
-   */
-
-  char profile[5] = {1,0,1,0};
-
-  for (int x = 0; x < 4; x++){
-  
-    Serial.print(profile[x]);
-
-  }
-
   //inboundData();
-  Serial.print("Rover intialized: ");
+  Serial.print(ROVER_ID);
+  Serial.print(",");
   Serial.print(MIN_THROTTLE);
   Serial.print(",");
   Serial.print(MAX_THROTTLE);
+  Serial.println(";");
+
+  Serial.print(ROVER_ID);
+  Serial.print(",");
+  Serial.print(MAX_LEFT);
+  Serial.print(",");
+  Serial.print(MAX_RIGHT);
+  Serial.println(";");
   
 }
 
@@ -158,42 +156,50 @@ void loop() {
   if(func != prev_func){
         
     switch (func) {
-      case 0: 
+      
+      case 0:
+        // Update the motor operating range
+        if (data1 > 0){
+          MIN_THROTTLE = data1;
+        }
 
+        if (data2 > 0){
+          MAX_THROTTLE = data2;
+        }
+        break;
+
+      case 1:
+        CENTRE = data1;
+
+        MAX_LEFT = data1 - data2;
+        MAX_RIGHT = data1 + data2;
+        break;
+
+      case 2: 
         // Set both the direction and throttle
         dir = data1;
         halt(); // stop the motor before changing direction
         digitalWrite(MOTA_DIR, dir);
         update_velocity(data2);
-        //bitClear(control, 6);
+        // bitClear(control, 6);
         break;
 
-      case 1:
-
+      case 3:
         // Set just the throttle level
         update_velocity(data1);
-        //throttle = update_velocity(in_throttle);
-        //bitSet(control, 6);
+        // throttle = update_velocity(in_throttle);
+        // bitSet(control, 6);
         break;
 
-      case 2:
-
+      case 4:
         // Set both the speed and steering angle
         update_steering(data2);
         update_velocity(data1);
         break;
 
-      case 3: 
-      
+      case 5: 
         // Just set the steering angle
         update_steering(data1);
-        break;
-     
-
-      case 4:
-    
-        // Adust the stall speed, if needed
-        data1 = MIN_THROTTLE;
         break;
 
     }
@@ -230,7 +236,7 @@ void inboundData(){
         }
 
         else {
-          receivedChars[ndx] = '\0'; //Terminate the end of the string
+          receivedChars[ndx] = '\0'; // Terminate the end of the string
           recvInProgress = false;
           ndx = 0;
           serRead = true;
@@ -244,7 +250,7 @@ void inboundData(){
   }
 }
 
-void parseData(){ //Split the data into its parseData
+void parseData(){ // Split the data into its parseData
 
   char * strtokIndx; // This is used by strtok() as an index
 
@@ -265,7 +271,7 @@ void update_velocity(uint8_t accel){
   if (throttle >= MIN_THROTTLE && throttle <= MAX_THROTTLE){
 
     analogWrite(MOTA_PWM, accel);
-    //bitSet(control, 7); // 1100 0000 (192) - set motion bit to 1
+    // bitSet(control, 7); // 1100 0000 (192) - set motion bit to 1
 
   }
 
@@ -333,6 +339,6 @@ void transmit(uint8_t results, uint8_t throttle, uint8_t pos){ // TODO rework se
 void halt(){
   
   analogWrite(MOTA_PWM, 0);
-  //bitClear(control, 7); // set motion bit to 0 to signify that the Rover is now idle
+  // bitClear(control, 7); // set motion bit to 0 to signify that the Rover is now idle
   
 }
