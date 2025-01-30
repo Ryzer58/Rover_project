@@ -1,17 +1,22 @@
 # Sunxi PWM polarity correction - In the PWM controller register a single bit
-# is used to control the polarity of the signal output. In unset state the
-# pulse is active low, which is ok for use casses such as LED backlight but 
-# not for this application of driving motors. This is definetly the case for
-# the Allwinner A10 and A20 but I have not tested on newer chips. This is a
-# simple fix to set the polarity into 'normal' as soon as possible when booting.
-# A limitation of this approach is that it takes around a minute to come into
-# effect, during which time the motors are spinning uncontrollably at full power.
-# A future a possible solution would be replace the motor controller with a 
-# different chip that has a proper hardware enable pin which is not set until
-# the polarity has been configured. We could also add addition hardware that
-# isolates the motor power. Ideally it would be better if we could pre-configure
-# the polarity within the dts overlay but this is a more complex challenge that
-# would involve a rewrite of the sun4i-pwm driver. 
+# is used to control the polarity of the signal output. The default state for
+# both channels is active low. This is definitely the casefor the Allwinner 
+# A10 and A20 but could differ on newer hardware. For certain applications 
+# such as driving an LED backlight this is fine but in the case of driving 
+# motors until corrected the PWM output is uncontrolled and at full speed.
+# 
+# PWM is interfaced using the standard sysfsPWM framework and therefore we need
+# to first export the channel before we can use it. Then we can set the polarity 
+# into 'normal' state. Ideally this should happen as soon as possible while
+# booting however currently there is a noticeable time delay before this script
+# is called during which period there is no control of the PWM output.
+#
+# Todo - Investigate better workarounds/improvements. One possibility is to replace
+# the controller board with a newer or custom motor driver featuring a dedicated
+# enable pin. A second option would be to add some form of power isolation on the
+# motor supply side to prevent any motion until PWM is properly set. Going down the
+# software route would involve alterations to the existing sun4i PWM driver to add
+# a node for configuring the polarity within the dts. 
 
 
 CHANNEL=0
