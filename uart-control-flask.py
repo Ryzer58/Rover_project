@@ -2,16 +2,18 @@
 #
 # Wifi/Web driven Rover -- Hybrid version
 #
-# Written by Ryzer - 2021/2022 (v1.2)
+# Written by Ryzer - 2023 (v1.2)
 #
-# Uses pyserial and Flask
-# Adafruit Blinka may be used if going down the approuch of incorprating less time dependant functions
-#
-# Main control script, for connecting to the microcontroller handling the time sensitive operations of
-# controlling motors and reading sensors. If using RaspberryPi with Raspian OS we will most likely be
-# using USB ports so not much software configuration will be needed. If using the Pcduino or any
-# SBC that is running Armbian be sure to activate the appropriate Serial Overlay. 
-# 
+# Rover control script using a companion microcontroller for more time senstive operations. The main Libraries used
+# are Flask, pyserial and Adafruit Blinka for any onboard IO used where timing is no so greatly an issue.
+# Adafruit Blinka may be used if going down the approuch of incorprating less time dependant functions. This has
+# primarily been test on The Raspberry Pi 3 and The Pcduino 2 although with a few minor adjust it can work with
+# other boards so long as they have the hardware requirements. Depending on what is avaliable, certian interfaces
+# may need to be configured differently. In the case of Using the Raspberry Pi not much needs to be done other
+# than checking the connections. For the Pcduino we need to make sure that the otg port is configure in host mode
+# and than the Serial overlay is loaded on the Armbian OS.
+
+# Currently have 4 supported functions
 
 import sys
 from time import perf_counter_ns, sleep
@@ -27,24 +29,24 @@ app = Flask (__name__, template_folder='web-app/', static_folder='web-app/static
 throttle = 0
 throttle_level = 100
 direction = True
-motRange = (70, 255, 1) # Min, Max, Number of motors attached
+motRange = (70, 255) # Min, Max, Number of motors attached
 
 str_pos = 30
 pan_pos =  90 # not yet tested
 servoRange = (30, 0, 60) # Centre, Left, Right
+panRange = (45, 90, 135)
 
 timer_enabled = True
 timer_start = 0
 timer_duration = 0
 func = 0
 
-rover_param = ""
-labels = ("Min", "Max", "Attached", "Centre", "Left", "Right")
 
-
-# Serial Port detection mechanism (wip):
-# Scan attached serial devices looking for an Arduino or similar/microcontroller
-# if found we then assig it to our link variable
+# Serial Port detection mechanism:
+# Scan attached serial devices looking for an Arduino or similar/microcontroller if found we then 
+# assign it as our target for communication. This is a work in progress that will not to account 
+# if connection is lost and regained. If this occurs it could cause the device number to jump in 
+# which case this will fail.
 
 myports = [tuple(p) for p in list(serial.tools.list_ports.comports())]
 arduLink = ' '
@@ -66,39 +68,26 @@ else:
    piComm = serial.Serial(arduLink,19200,timeout = 2)
    piComm.flush()
 
-# Write out configuration data
+# One of the items on the todo list is to integrate GPS based position using a GPS Module. This  
+# fits into aims of making the rover more autonomous. How we wire in the module will depend on
+# what SBC we use. Raspberry Pi's seem to lack UART ports however they do have plenty of USB ports
+# mean that we would need to use a ttl adapter to bridge to the module. The Pcduino on the otherhand
+# only has 1 A type USB port and an micro USB OTG port. Only the flip side, we have any of the 3
+# UART ports to choose from. For the beagleBone AI I need to review the avaliable interfaces
 
-for m in range(len(motRange)):
-    
-   rover_param = rover_param + str(motRange[m])
-    
-   if m < 2:
-         
-      rover_param = rover_param + ","
-    
-   print(labels[m] + str(motRange[m])) #Print back the retrieved value
+# Raspberry Pi - if we use hardware UART, especial or newer models of Raspberry Pi then either switch 
+# the Blutooth to the miniport or disable it entirely
+# gpsLink = '/dev/ttyUSB0'
+# gpsLink = '/dev/ttyUSB1'
+# gpsLink = '/dev/ttyAMA0'
 
-rover_param = rover_param + ";"
+# Pcduino
+# gpsLink ='/dev/ttyS1'
+# LocData = serial.Serial(gpsLink,9600,timeout=2)
 
-for s in range(len(servoRange)):
-   
-   rover_param = rover_param + str(servoRange[s])
-
-   if s < 2:
-       
-      rover_param = rover_param + ","
-       
-   print(labels[s + 3] + str(servoRange[s]))
-
-
-rover_param = rover_param + "\n"
-
-piComm.write(rover_param.encode('utf-8'))
-
-sleep(0.2)
-
-piComm.read
-
+# data processing:
+# The Microcontroller expects to recieve a command string in the format of command number, parameter1, parameter2.
+# Not all commands have 2 parameters so just pass a dummy value that will be ignore on the Arduino side.
 
 def transmit(function, param0, param1):
     
@@ -109,8 +98,36 @@ def transmit(function, param0, param1):
 def recieve():
     incoming = piComm.readline().decode('utf-8').rstrip()
     recievedData = incoming.split(",")
-
     return recievedData
+
+# Due to the way serial is handeld on certain boards such as the leonardo we have to start the communication 
+# as we have told the Arduino to wait.
+
+
+mot_startup = recieve()
+servo_startup = recieve()
+
+
+if mot_startup[1] != motRange(0):
+   print("Warning - currrent stall value does not match config, issuing overidding")
+   overide_min = True
+
+if mot_startup[2] != motRange(1):
+   print("Warning - default max does not match config, overidding")
+   overide_max = True
+
+if overide_min == True:
+   transmit(0, motRange(0), 0)
+
+elif overide_max == True:
+   transmit(0, 0, motRange(1))
+
+elif overide_min and overide_max:
+   transmit(0, motRange(0), motRange(1))
+
+if servo_startup[1] != servoRange[1]:
+   transmit(1, servoRange[0], 30)
+   
 
 # TODO - once we have got the control data to render correctly on the page with the
 # data automatically refreshing we can then worry about handling the return data
@@ -120,26 +137,20 @@ def move_forward():
    global throttle, throttle_level, direction
 
    if direction != True and throttle > motRange[0]:
-
       stop()
-      
       direction = True
-
+   
    throttle = throttle_level
-
    return direction, throttle
 
 def move_reverse():
    global throttle, direction
 
    if direction != False and throttle > motRange[0]:
-
       stop()
-
       direction = False
 
    throttle = throttle_level
-
    return direction, throttle
 
         
@@ -147,7 +158,6 @@ def move_left():
    global str_pos, servoRange
 
    if str_pos > servoRange[1]:
-      
       str_pos -= 5
    
    return str_pos
@@ -156,7 +166,6 @@ def move_right():
    global str_pos, servoRange
 
    if str_pos < servoRange[2]:
-
       str_pos += 5
 
    return str_pos
@@ -167,7 +176,6 @@ def reset():
 
 def stop():
     transmit('0','0',str(str_pos))
-
 
 # Core movement controls 
 
@@ -180,11 +188,8 @@ def forward():
    global num_mot, timer_enabled, timer_start
 
    print("Forward")
-
    direction, power = move_forward()
-
    if timer_enabled == True:
-
       timer_start = perf_counter_ns()
       
    return render_template("index.html", direction=direction, acceleration=power)
@@ -194,11 +199,8 @@ def reverse():
    global num_mot, timer_enabled, timer_start
 
    print("Backward")
-
    direction, power = move_reverse()
-   
    if timer_enabled == True:
-
       timer_start = perf_counter_ns()
 
    return render_template('index.html', direction=direction, acceleration=power)
@@ -226,7 +228,6 @@ def em_stop():
    global throttle
 
    stop()
-
    print("Stopped")
    
    return render_template('index.html', acceleration=throttle)
@@ -240,7 +241,6 @@ def speed_low():
    global throttle_level
 
    throttle_level = 100
-
    return render_template("index.html")
    
 
@@ -248,8 +248,7 @@ def speed_low():
 def speed_mid():
    global throttle_level
 
-   throttle_level = 170 
-   
+   throttle_level = 170  
    return render_template("index.html")
 
 
@@ -257,12 +256,11 @@ def speed_mid():
 def speed_hi():
    global throttle_level
 
-   throttle_level = 245
-      
+   throttle_level = 245  
    return render_template("index.html")
 
 # Run time - a counter for controlling the duration for which the rover moves, again the implements a set of predefined speeds that range from 'short' to
-# continous where the counter is disabled and the motors will keep on running unless a stop command is sent 
+# continous where the counter is disabled and the motors will keep on running until the stop command is sent. 
 
 @app.route("/continuous") #running duration
 def continuous():
@@ -302,8 +300,8 @@ def panlf( ):
 
    print("Panlt")
    pan_pos += 5
-   if pan_pos < 135:
-      pan_pos = 135
+   if pan_pos < panRange[2]:
+      pan_pos = panRange[2]
    
    return render_template("index.html", bearing=pan_pos)
 
@@ -313,8 +311,8 @@ def panrt():
 
    print("Panrt")
    pan_pos -= 5
-   if pan_pos > 45:
-      pan_pos = 45
+   if pan_pos > panRange[0]:
+      pan_pos = panRange[0]
   
    return render_template("index.html", bearing=pan_pos)
 
